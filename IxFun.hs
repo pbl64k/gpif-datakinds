@@ -11,6 +11,7 @@ type t :-> v = forall ix. t ix -> v ix
 data Const :: * -> k -> * where
     Const :: t -> Const t k
 
+unconst :: Const t k -> t
 unconst (Const x) = x
 
 data Union :: (t -> *) -> (v -> *) -> Either t v -> * where
