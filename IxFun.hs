@@ -5,8 +5,21 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
+
+class Isomorphic a b where
+    from :: a -> b
+    to :: b -> a
+
+instance Isomorphic a a where
+    from = id
+    to = id
 
 type t :-> v = forall ix. t ix -> v ix
+
+data Void
 
 data Const :: * -> k -> * where
     Const :: t -> Const t k
@@ -14,9 +27,21 @@ data Const :: * -> k -> * where
 unconst :: Const t k -> t
 unconst (Const x) = x
 
+instance Isomorphic a (Const a k) where
+    from = Const
+    to = unconst
+
 data Union :: (t -> *) -> (v -> *) -> Either t v -> * where
     UnionLeft :: xf t -> Union xf xg (Left t)
     UnionRight :: xg v -> Union xf xg (Right v)
+
+instance Isomorphic a (b i) => Isomorphic a (Union b c (Left i)) where
+    from x = UnionLeft $ from x
+    to (UnionLeft x) = to x
+
+instance Isomorphic a (c i) => Isomorphic a (Union b c (Right i)) where
+    from x = UnionRight $ from x
+    to (UnionRight x) = to x
 
 split :: (t :-> v) -> (s :-> u) -> Union t s :-> Union v u
 split f _ (UnionLeft xf) = UnionLeft $ f xf
@@ -33,11 +58,19 @@ data IxVoid :: (inputIndex -> *) -> outputIndex -> *
 instance IxFunctor IxVoid where
     _ `ixmap` _ = undefined
 
+instance Isomorphic Void (IxVoid r o) where
+    from = undefined
+    to = undefined
+
 data IxUnit :: (inputIndex -> *) -> outputIndex -> * where
     IxUnit :: IxUnit r o
 
 instance IxFunctor IxUnit where
     _ `ixmap` _ = IxUnit
+
+instance Isomorphic () (IxUnit r o) where
+    from () = IxUnit
+    to IxUnit = ()
 
 data (:+:) ::
         ((inputIndex -> *) -> outputIndex -> *) ->
@@ -50,6 +83,12 @@ instance IxFunctor (xf :+: xg) where
     f `ixmap` (IxLeft xf) = IxLeft $ f `ixmap` xf
     f `ixmap` (IxRight xg) = IxRight $ f `ixmap` xg
 
+instance (IxFunctor c, IxFunctor d, Isomorphic a (c r o), Isomorphic b (d r o)) => Isomorphic (Either a b) ((c :+: d) r o) where
+    from (Left x) = IxLeft $ from x
+    from (Right x) = IxRight $ from x
+    to (IxLeft x) = Left $ to x
+    to (IxRight x) = Right $ to x
+
 data (:*:) ::
         ((inputIndex -> *) -> outputIndex -> *) ->
         ((inputIndex -> *) -> outputIndex -> *) ->
@@ -59,11 +98,19 @@ data (:*:) ::
 instance IxFunctor (xf :*: xg) where
     f `ixmap` (xf `IxProd` xg) = (f `ixmap` xf) `IxProd` (f `ixmap` xg)
 
+instance (IxFunctor c, IxFunctor d, Isomorphic a (c r o), Isomorphic b (d r o)) => Isomorphic (a, b) ((c :*: d) r o) where
+    from (a, b) = from a `IxProd` from b
+    to (a `IxProd` b) = (to a, to b)
+
 data IxProj :: inputIndex -> (inputIndex -> *) -> outputIndex -> * where
     IxProj :: r i -> IxProj i r o
 
 instance IxFunctor (IxProj ix) where
     ixmap f (IxProj x) = IxProj $ f x
+
+instance Isomorphic a (r i) => Isomorphic a (IxProj i r o) where
+    from x = IxProj $ from x
+    to (IxProj x) = to x
 
 data IxFix ::
         ((Either inputIndex outputIndex -> *) -> outputIndex -> *) ->
@@ -121,4 +168,10 @@ factorial n = foldList 1 (*) $ unfoldList n coalg
     where
         coalg 0 = Nothing
         coalg n = Just (n, pred n)
+
+--tst :: IxProj (Left ()) (Union (Const Int) (Const Char)) ()
+--tst = IxProj $ UnionLeft $ Const 1
+--
+--tst2 :: Int
+--tst2 = to tst
 
