@@ -1,6 +1,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeOperators #-}
@@ -8,27 +9,38 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
 
 class Isomorphic a b where
     from :: a -> b
+
     to :: b -> a
+
+isolift f = from . f . to
+
+isounlift f = to . f . from
 
 instance Isomorphic a a where
     from = id
+
     to = id
 
 type t :-> v = forall ix. t ix -> v ix
 
 data Void
 
+--data Const :: * -> () -> * where
+--    Const :: t -> Const t '()
 data Const :: * -> k -> * where
     Const :: t -> Const t k
 
 unconst :: Const t k -> t
 unconst (Const x) = x
 
+--instance Isomorphic a (Const a '()) where
 instance Isomorphic a (Const a k) where
     from = Const
+
     to = unconst
 
 data Union :: (t -> *) -> (v -> *) -> Either t v -> * where
@@ -37,10 +49,12 @@ data Union :: (t -> *) -> (v -> *) -> Either t v -> * where
 
 instance Isomorphic a (b i) => Isomorphic a (Union b c (Left i)) where
     from x = UnionLeft $ from x
+
     to (UnionLeft x) = to x
 
 instance Isomorphic a (c i) => Isomorphic a (Union b c (Right i)) where
     from x = UnionRight $ from x
+
     to (UnionRight x) = to x
 
 split :: (t :-> v) -> (s :-> u) -> Union t s :-> Union v u
@@ -53,6 +67,19 @@ lift f (Const x) = Const $ f x
 class IxFunctor (xf :: (inputIndex -> *) -> outputIndex -> *) where
     ixmap :: (t :-> v) -> xf t :-> xf v
 
+data IxIdUnit ::
+        ((inputIndex -> *) -> () -> *) ->
+        (inputIndex -> *) -> () -> * where
+    IxIdUnit :: xf r '() -> IxIdUnit xf r '()
+
+instance IxFunctor xf => IxFunctor (IxIdUnit xf) where
+    f `ixmap` (IxIdUnit xf) = IxIdUnit $ f `ixmap` xf
+
+instance (IxFunctor xf, Isomorphic a (xf r '())) => Isomorphic a (IxIdUnit xf r '()) where
+    from = IxIdUnit . from
+
+    to (IxIdUnit x) = to x
+
 data IxVoid :: (inputIndex -> *) -> outputIndex -> *
 
 instance IxFunctor IxVoid where
@@ -60,6 +87,7 @@ instance IxFunctor IxVoid where
 
 instance Isomorphic Void (IxVoid r o) where
     from = undefined
+
     to = undefined
 
 data IxUnit :: (inputIndex -> *) -> outputIndex -> * where
@@ -70,6 +98,7 @@ instance IxFunctor IxUnit where
 
 instance Isomorphic () (IxUnit r o) where
     from () = IxUnit
+
     to IxUnit = ()
 
 data (:+:) ::
@@ -86,6 +115,7 @@ instance IxFunctor (xf :+: xg) where
 instance (IxFunctor c, IxFunctor d, Isomorphic a (c r o), Isomorphic b (d r o)) => Isomorphic (Either a b) ((c :+: d) r o) where
     from (Left x) = IxLeft $ from x
     from (Right x) = IxRight $ from x
+
     to (IxLeft x) = Left $ to x
     to (IxRight x) = Right $ to x
 
@@ -100,16 +130,18 @@ instance IxFunctor (xf :*: xg) where
 
 instance (IxFunctor c, IxFunctor d, Isomorphic a (c r o), Isomorphic b (d r o)) => Isomorphic (a, b) ((c :*: d) r o) where
     from (a, b) = from a `IxProd` from b
+
     to (a `IxProd` b) = (to a, to b)
 
 data IxProj :: inputIndex -> (inputIndex -> *) -> outputIndex -> * where
     IxProj :: r i -> IxProj i r o
 
 instance IxFunctor (IxProj ix) where
-    ixmap f (IxProj x) = IxProj $ f x
+    f `ixmap` (IxProj x) = IxProj $ f x
 
 instance Isomorphic a (r i) => Isomorphic a (IxProj i r o) where
     from x = IxProj $ from x
+
     to (IxProj x) = to x
 
 data IxFix ::
@@ -136,38 +168,56 @@ coalgebra `ixana` x = IxIn $ f `ixmap` (coalgebra x)
         f :: Union r s :-> Union r (IxFix xf r)
         f = id `split` (coalgebra `ixana`)
 
-type ListFunctor = IxUnit :+: (IxProj (Left ()) :*: IxProj (Right ()))
+type ListFunctor = IxIdUnit (IxUnit :+: (IxProj (Left '()) :*: IxProj (Right '())))
 
 type List = IxFix ListFunctor
 
-fromList :: [a] -> List (Const a) ()
-fromList [] = IxIn $ IxLeft IxUnit
-fromList (x : xs) = IxIn $ IxRight $ (IxProj $ UnionLeft $ Const x) `IxProd` (IxProj $ UnionRight $ fromList xs)
+fromList :: forall a. [a] -> List (Const a) '()
+fromList = IxIn . from . f
+    where
+        f :: [a] -> Either () (a, List (Const a) '())
+        f [] = Left ()
+        f (x : xs) = Right (x, fromList xs)
 
-toList :: List (Const a) () -> [a]
-toList (IxIn (IxLeft _)) = []
-toList (IxIn (IxRight ((IxProj (UnionLeft (Const x))) `IxProd` (IxProj (UnionRight xs))))) = x : toList xs
+toList :: forall a. List (Const a) '() -> [a]
+toList (IxIn (IxIdUnit (IxLeft _))) = []
+toList (IxIn (IxIdUnit (IxRight xs))) = fst xs' : toList (snd xs')
+    where
+        xs' :: (a, List (Const a) '())
+        xs' = to xs
+
+instance forall a. Isomorphic [a] (List (Const a) '()) where
+    from = fromList
+
+    to = toList
+
+cataList :: forall a b. (Either () (b, a) -> a) -> [b] -> a
+cataList algebra = undefined --isounlift (alg `ixcata`)
+    where
+        alg :: ListFunctor (Union (Const b) (Const a)) :-> Const a
+        alg = undefined --isolift algebra
 
 foldList :: forall a b. a -> (a -> b -> a) -> [b] -> a
-foldList nil cons = unconst . (algebra `ixcata`) . fromList
+foldList nil cons = to . (algebra `ixcata`) . fromList
     where
         algebra :: ListFunctor (Union (Const b) (Const a)) :-> Const a
-        algebra (IxLeft _) = Const nil
-        algebra (IxRight ((IxProj (UnionLeft (Const x))) `IxProd` (IxProj (UnionRight (Const y))))) = Const $ cons y x
+        algebra (IxIdUnit (IxLeft _)) = from nil
+        algebra (IxIdUnit (IxRight ((IxProj (UnionLeft (Const x))) `IxProd` (IxProj (UnionRight (Const y)))))) = from $ cons y x
 
-unfoldList :: forall a b. a -> (a -> Maybe (b, a)) -> [b]
-unfoldList unnil uncons = toList $ coalgebra `ixana` Const unnil
-    where
-        coalgebra :: Const a :-> ListFunctor (Union (Const b) (Const a))
-        coalgebra (Const x) = xform $ uncons x
-            where
-                xform Nothing = IxLeft IxUnit
-                xform (Just (x, y)) = IxRight $ (IxProj $ UnionLeft $ Const x) `IxProd` (IxProj $ UnionRight $ Const y)
-
-factorial n = foldList 1 (*) $ unfoldList n coalg
-    where
-        coalg 0 = Nothing
-        coalg n = Just (n, pred n)
+--unfoldList :: forall a b. a -> (a -> Maybe (b, a)) -> [b]
+--unfoldList unnil uncons = toList $ coalgebra `ixana` from unnil
+--    where
+--        coalgebra :: forall ix. Const a ix -> ListFunctor (Union (Const b) (Const a)) ix
+--        coalgebra (Const x) = xform $ Const $ uncons x
+--            where
+--                xform :: Const (Maybe (b, a)) ix -> ListFunctor (Union (Const b) (Const a)) ix
+--                xform (Const Nothing) = IxIdUnit $ IxLeft IxUnit
+--                xform (Const (Just (x, y))) = from $ Right (x, y)
+--
+--factorial n = foldList 1 (*) $ unfoldList n coalg
+--    where
+--        coalg 0 = Nothing
+--        coalg n = Just (n, pred n)
 
 --tst :: IxProj (Left ()) (Union (Const Int) (Const Char)) ()
 --tst = IxProj $ UnionLeft $ Const 1
