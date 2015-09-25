@@ -9,17 +9,12 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE IncoherentInstances #-}
 
 class Isomorphic a b where
     from :: a -> b
 
     to :: b -> a
-
-isolift :: (Isomorphic a c, Isomorphic b d) => (a -> b) -> c -> d
-isolift f = from . f . to
-
-isounlift :: (Isomorphic c a, Isomorphic d b) => (a -> b) -> c -> d
-isounlift f = to . f . from
 
 instance Isomorphic a a where
     from = id
@@ -33,13 +28,10 @@ data Void
 data Const :: * -> () -> * where
     Const :: t -> Const t '()
 
-unconst :: Const t k -> t
-unconst (Const x) = x
+instance Isomorphic a b => Isomorphic a (Const b '()) where
+    from = Const . from
 
-instance Isomorphic a (Const a '()) where
-    from = Const
-
-    to = unconst
+    to (Const x) = to x
 
 lift :: (t -> v) -> Const t :-> Const v
 lift f (Const x) = Const $ f x
@@ -49,18 +41,18 @@ data Union :: (t -> *) -> (v -> *) -> Either t v -> * where
     UnionRight :: xg v -> Union xf xg (Right v)
 
 instance Isomorphic a (b i) => Isomorphic a (Union b c (Left i)) where
-    from x = UnionLeft $ from x
+    from = UnionLeft . from
 
     to (UnionLeft x) = to x
 
 instance Isomorphic a (c i) => Isomorphic a (Union b c (Right i)) where
-    from x = UnionRight $ from x
+    from = UnionRight . from
 
     to (UnionRight x) = to x
 
 split :: (t :-> v) -> (s :-> u) -> Union t s :-> Union v u
-split f _ (UnionLeft xf) = UnionLeft $ f xf
-split _ f (UnionRight xf) = UnionRight $ f xf
+split f _ (UnionLeft x) = UnionLeft $ f x
+split _ f (UnionRight x) = UnionRight $ f x
 
 class IxFunctor (xf :: (inputIndex -> *) -> outputIndex -> *) where
     ixmap :: (t :-> v) -> xf t :-> xf v
@@ -95,9 +87,9 @@ instance IxFunctor IxUnit where
     _ `ixmap` _ = IxUnit
 
 instance Isomorphic () (IxUnit r o) where
-    from () = IxUnit
+    from _ = IxUnit
 
-    to IxUnit = ()
+    to _ = ()
 
 data (:+:) ::
         ((inputIndex -> *) -> outputIndex -> *) ->
@@ -110,7 +102,8 @@ instance IxFunctor (xf :+: xg) where
     f `ixmap` (IxLeft xf) = IxLeft $ f `ixmap` xf
     f `ixmap` (IxRight xg) = IxRight $ f `ixmap` xg
 
-instance (IxFunctor c, IxFunctor d, Isomorphic a (c r o), Isomorphic b (d r o)) => Isomorphic (Either a b) ((c :+: d) r o) where
+instance (IxFunctor c, IxFunctor d, Isomorphic a (c r o), Isomorphic b (d r o)) =>
+        Isomorphic (Either a b) ((c :+: d) r o) where
     from (Left x) = IxLeft $ from x
     from (Right x) = IxRight $ from x
 
@@ -126,7 +119,8 @@ data (:*:) ::
 instance IxFunctor (xf :*: xg) where
     f `ixmap` (xf `IxProd` xg) = (f `ixmap` xf) `IxProd` (f `ixmap` xg)
 
-instance (IxFunctor c, IxFunctor d, Isomorphic a (c r o), Isomorphic b (d r o)) => Isomorphic (a, b) ((c :*: d) r o) where
+instance (IxFunctor c, IxFunctor d, Isomorphic a (c r o), Isomorphic b (d r o)) =>
+        Isomorphic (a, b) ((c :*: d) r o) where
     from (a, b) = from a `IxProd` from b
 
     to (a `IxProd` b) = (to a, to b)
@@ -138,7 +132,7 @@ instance IxFunctor (IxProj ix) where
     f `ixmap` (IxProj x) = IxProj $ f x
 
 instance Isomorphic a (r i) => Isomorphic a (IxProj i r o) where
-    from x = IxProj $ from x
+    from = IxProj . from
 
     to (IxProj x) = to x
 
@@ -178,13 +172,12 @@ fromList = IxIn . from . f
         f (x : xs) = Right (x, fromList xs)
 
 toList :: forall a. List (Const a) '() -> [a]
-toList (IxIn (IxIdUnit (IxLeft _))) = []
-toList (IxIn (IxIdUnit (IxRight xs))) = fst xs' : toList (snd xs')
+toList = either (const []) (uncurry $ (. toList) . (:)) . f
     where
-        xs' :: (a, List (Const a) '())
-        xs' = to xs
+        f :: List (Const a) '() -> Either () (a, List (Const a) '())
+        f (IxIn xs) = to xs
 
-instance forall a. Isomorphic [a] (List (Const a) '()) where
+instance Isomorphic [a] (List (Const a) '()) where
     from = fromList
 
     to = toList
@@ -201,6 +194,7 @@ anaList coalgebra = toList . (coalg `ixana`) . from
         coalg :: Const a :-> ListFunctor (Union (Const b) (Const a))
         coalg (Const x) = from $ coalgebra x
 
+factorial :: Integer -> Integer
 factorial = cataList (either (const 1) (uncurry (*))) . anaList coalg
     where
         coalg 0 = Left ()
