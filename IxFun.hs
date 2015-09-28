@@ -40,12 +40,12 @@ data Union :: (t -> *) -> (v -> *) -> Either t v -> * where
     UnionLeft :: xf t -> Union xf xg (Left t)
     UnionRight :: xg v -> Union xf xg (Right v)
 
-instance Isomorphic a (b i) => Isomorphic a (Union b c (Left i)) where
+instance Isomorphic a (b ix) => Isomorphic a (Union b c (Left ix)) where
     from = UnionLeft . from
 
     to (UnionLeft x) = to x
 
-instance Isomorphic a (c i) => Isomorphic a (Union b c (Right i)) where
+instance Isomorphic a (c ix) => Isomorphic a (Union b c (Right ix)) where
     from = UnionRight . from
 
     to (UnionRight x) = to x
@@ -124,6 +124,16 @@ instance (IxFunctor c, IxFunctor d, Isomorphic a (c r o), Isomorphic b (d r o)) 
     from (a, b) = from a `IxProd` from b
 
     to (a `IxProd` b) = (to a, to b)
+
+data (:.:) ::
+        ((intermIndex -> *) -> outputIndex -> *) ->
+        ((inputIndex -> *) -> intermIndex -> *) ->
+        (inputIndex -> *) -> outputIndex -> * where
+    IxComp :: (IxFunctor xf, IxFunctor xg) => xf (xg r) o -> (xf :.: xg) r o
+
+instance IxFunctor (xf :.: xg) where
+    ixmap :: forall t v. (t :-> v) -> (xf :.: xg) t :-> (xf :.: xg) v
+    f `ixmap` (IxComp xf) = IxComp $ (f `ixmap`) `ixmap` xf
 
 data IxProj :: inputIndex -> (inputIndex -> *) -> outputIndex -> * where
     IxProj :: r i -> IxProj i r o
