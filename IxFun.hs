@@ -11,6 +11,9 @@
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE IncoherentInstances #-}
 
+data Equ a b where
+    Reflexivity :: Equ a a
+
 class Isomorphic a b where
     from :: a -> b
 
@@ -135,6 +138,8 @@ instance IxFunctor (xf :.: xg) where
     ixmap :: forall t v. (t :-> v) -> (xf :.: xg) t :-> (xf :.: xg) v
     f `ixmap` (IxComp xf) = IxComp $ (f `ixmap`) `ixmap` xf
 
+-- TODO? isomorphism for composition
+
 data IxProj :: inputIndex -> (inputIndex -> *) -> outputIndex -> * where
     IxProj :: r i -> IxProj i r o
 
@@ -145,6 +150,12 @@ instance Isomorphic a (r i) => Isomorphic a (IxProj i r o) where
     from = IxProj . from
 
     to (IxProj x) = to x
+
+data IxOut :: outputIndex -> (inputIndex -> *) -> outputIndex -> * where
+    IxOut :: Equ o' o -> IxOut o' r o
+
+instance IxFunctor (IxOut o') where
+    _ `ixmap` (IxOut x) = IxOut x
 
 data IxFix ::
         ((Either inputIndex outputIndex -> *) -> outputIndex -> *) ->
