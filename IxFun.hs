@@ -221,3 +221,13 @@ factorial = cataList (either (const 1) (uncurry (*))) . anaList coalg
         coalg 0 = Left ()
         coalg n = Right (n, pred n)
 
+type Tst = IxOut (Left ()) :+: IxOut (Right ())
+
+x :: Tst (Const ()) (Left ())
+x = IxLeft $ IxOut Reflexivity
+
+type Tst2 = IxIdUnit (IxOut '() :*: IxUnit)
+
+z :: Tst2 (Const ()) '()
+z = IxIdUnit $ IxOut Reflexivity `IxProd` IxUnit
+
