@@ -11,8 +11,8 @@
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE IncoherentInstances #-}
 
-data Equ a b where
-    Reflexivity :: Equ a a
+data Equality a b where
+    Reflexivity :: Equality a a
 
 class Isomorphic a b where
     from :: a -> b
@@ -36,8 +36,8 @@ instance Isomorphic a b => Isomorphic a (Const b '()) where
 
     to (Const x) = to x
 
-lift :: (t -> v) -> Const t :-> Const v
-lift f (Const x) = Const $ f x
+liftConst :: (t -> v) -> Const t :-> Const v
+liftConst f (Const x) = Const $ f x
 
 data Union :: (t -> *) -> (v -> *) -> Either t v -> * where
     UnionLeft :: xf t -> Union xf xg (Left t)
@@ -59,19 +59,6 @@ split _ f (UnionRight x) = UnionRight $ f x
 
 class IxFunctor (xf :: (inputIndex -> *) -> outputIndex -> *) where
     ixmap :: (t :-> v) -> xf t :-> xf v
-
-data IxIdUnit ::
-        ((inputIndex -> *) -> () -> *) ->
-        (inputIndex -> *) -> () -> * where
-    IxIdUnit :: xf r '() -> IxIdUnit xf r '()
-
-instance IxFunctor xf => IxFunctor (IxIdUnit xf) where
-    f `ixmap` (IxIdUnit xf) = IxIdUnit $ f `ixmap` xf
-
-instance (IxFunctor xf, Isomorphic a (xf r '())) => Isomorphic a (IxIdUnit xf r '()) where
-    from = IxIdUnit . from
-
-    to (IxIdUnit x) = to x
 
 data IxVoid :: (inputIndex -> *) -> outputIndex -> *
 
@@ -138,7 +125,11 @@ instance IxFunctor (xf :.: xg) where
     ixmap :: forall t v. (t :-> v) -> (xf :.: xg) t :-> (xf :.: xg) v
     f `ixmap` (IxComp xf) = IxComp $ (f `ixmap`) `ixmap` xf
 
--- TODO? isomorphism for composition
+instance (IxFunctor xf, IxFunctor xg, Isomorphic a (xf (xg r) o)) =>
+        Isomorphic a ((xf :.: xg) r o) where
+    from = IxComp . from
+
+    to (IxComp x) = to x
 
 data IxProj :: inputIndex -> (inputIndex -> *) -> outputIndex -> * where
     IxProj :: r i -> IxProj i r o
@@ -151,8 +142,21 @@ instance Isomorphic a (r i) => Isomorphic a (IxProj i r o) where
 
     to (IxProj x) = to x
 
+data IxOutUnit ::
+        ((inputIndex -> *) -> () -> *) ->
+        (inputIndex -> *) -> () -> * where
+    IxOutUnit :: xf r '() -> IxOutUnit xf r '()
+
+instance IxFunctor xf => IxFunctor (IxOutUnit xf) where
+    f `ixmap` (IxOutUnit xf) = IxOutUnit $ f `ixmap` xf
+
+instance (IxFunctor xf, Isomorphic a (xf r '())) => Isomorphic a (IxOutUnit xf r '()) where
+    from = IxOutUnit . from
+
+    to (IxOutUnit x) = to x
+
 data IxOut :: outputIndex -> (inputIndex -> *) -> outputIndex -> * where
-    IxOut :: Equ o' o -> IxOut o' r o
+    IxOut :: Equality o' o -> IxOut o' r o
 
 instance IxFunctor (IxOut o') where
     _ `ixmap` (IxOut x) = IxOut x
@@ -181,7 +185,7 @@ coalgebra `ixana` x = IxIn $ f `ixmap` (coalgebra x)
         f :: Union r s :-> Union r (IxFix xf r)
         f = id `split` (coalgebra `ixana`)
 
-type ListFunctor = IxIdUnit (IxUnit :+: (IxProj (Left '()) :*: IxProj (Right '())))
+type ListFunctor = IxOutUnit (IxUnit :+: (IxProj (Left '()) :*: IxProj (Right '())))
 
 type List = IxFix ListFunctor
 
@@ -207,7 +211,7 @@ cataList :: forall a b. (Either () (b, a) -> a) -> [b] -> a
 cataList algebra = to . (alg `ixcata`) . fromList
     where
         alg :: ListFunctor (Union (Const b) (Const a)) :-> Const a
-        alg (IxIdUnit x) = from $ algebra $ to x
+        alg (IxOutUnit x) = from $ algebra $ to x
 
 anaList :: forall a b. (a -> Either () (b, a)) -> a -> [b]
 anaList coalgebra = toList . (coalg `ixana`) . from
@@ -220,14 +224,4 @@ factorial = cataList (either (const 1) (uncurry (*))) . anaList coalg
     where
         coalg 0 = Left ()
         coalg n = Right (n, pred n)
-
-type Tst = IxOut (Left ()) :+: IxOut (Right ())
-
-x :: Tst (Const ()) (Left ())
-x = IxLeft $ IxOut Reflexivity
-
-type Tst2 = IxIdUnit (IxOut '() :*: IxUnit)
-
-z :: Tst2 (Const ()) '()
-z = IxIdUnit $ IxOut Reflexivity `IxProd` IxUnit
 
