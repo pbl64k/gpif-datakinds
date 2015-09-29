@@ -148,7 +148,7 @@ data (:.:) ::
     IxComp :: (IxFunctor xf, IxFunctor xg) => xf (xg r) o -> (xf :.: xg) r o
 
 instance IxFunctor (xf :.: xg) where
-    ixmap :: forall t v. (t :-> v) -> (xf :.: xg) t :-> (xf :.: xg) v
+    ixmap :: (t :-> v) -> (xf :.: xg) t :-> (xf :.: xg) v
     f `ixmap` (IxComp xf) = IxComp $ (f `ixmap`) `ixmap` xf
 
 instance (IxFunctor xf, IxFunctor xg, Isomorphic a (xf (xg r) o)) =>

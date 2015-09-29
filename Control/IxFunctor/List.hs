@@ -44,11 +44,8 @@ instance Isomorphic [a] (List (Const a) '()) where
 
     to = toList
 
-mapList :: forall a b. (a -> b) -> [a] -> [b]
-mapList f = to . (f' `ixmap`) . fromList
-    where
-        f' :: Const a :-> Const b
-        f' (Const x) = from $ f x
+mapList :: (a -> b) -> [a] -> [b]
+mapList f = to . (liftConst f `ixmap`) . fromList
 
 cataList :: forall a b. (Either () (b, a) -> a) -> [b] -> a
 cataList algebra = to . (alg `ixcata`) . fromList
