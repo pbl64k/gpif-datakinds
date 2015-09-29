@@ -14,6 +14,7 @@ module Control.IxFunctor.Nat
         , toIntegerFromNat
         , cataInteger
         , anaInteger
+        , hyloInteger
         ) where
 
 import Control.IxFunctor.IxFunctor
@@ -52,4 +53,12 @@ anaInteger coalgebra = toIntegerFromNat . (coalg `ixana`) . from
     where
         coalg :: Const a :-> NatFunctor (Union (Const Void) (Const a))
         coalg (Const x) = from $ coalgebra x
+
+hyloInteger :: forall a b. (a -> Either () a) -> (Either () b -> b) -> a -> b
+hyloInteger coalgebra algebra = to . ixhylo coalg alg . Const
+    where
+        coalg :: Const a :-> NatFunctor (Union (Const Void) (Const a))
+        coalg (Const x) = from $ coalgebra x
+        alg :: NatFunctor (Union (Const Void) (Const b)) :-> Const b
+        alg (IxOutUnit x) = from $ algebra $ to x
 

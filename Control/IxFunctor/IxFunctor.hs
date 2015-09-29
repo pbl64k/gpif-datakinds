@@ -35,6 +35,7 @@ module Control.IxFunctor.IxFunctor
         , IxFix(IxIn)
         , ixcata
         , ixana
+        , ixhylo
         ) where
 
 data Equality a b where
@@ -210,4 +211,11 @@ coalgebra `ixana` x = IxIn $ f `ixmap` (coalgebra x)
     where
         f :: Union r s :-> Union r (IxFix xf r)
         f = id `split` (coalgebra `ixana`)
+
+ixhylo :: forall xf r s t. IxFunctor xf =>
+        s :-> xf (Union r s) -> xf (Union r t) :-> t -> s :-> t
+ixhylo coalgebra algebra = algebra . (f `ixmap`) . coalgebra
+    where
+        f :: Union r s :-> Union r t
+        f = id `split` (ixhylo coalgebra algebra)
 
