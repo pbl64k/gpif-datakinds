@@ -190,22 +190,31 @@ type ListFunctor = IxOutUnit (IxUnit :+: (IxProj (Left '()) :*: IxProj (Right '(
 type List = IxFix ListFunctor
 
 fromList :: forall a. [a] -> List (Const a) '()
-fromList = IxIn . from . f
+fromList = (coalgebra `ixana`) . Const
     where
-        f :: [a] -> Either () (a, List (Const a) '())
-        f [] = Left ()
-        f (x : xs) = Right (x, fromList xs)
+        coalgebra :: Const [a] :-> ListFunctor (Union (Const a) (Const [a]))
+        coalgebra (Const []) = IxOutUnit $ IxLeft IxUnit
+        coalgebra (Const (x : xs)) = IxOutUnit $ IxRight $ from (x, xs)
 
 toList :: forall a. List (Const a) '() -> [a]
-toList = either (const []) (uncurry $ (. toList) . (:)) . f
+toList = to . (algebra `ixcata`)
     where
-        f :: List (Const a) '() -> Either () (a, List (Const a) '())
-        f (IxIn xs) = to xs
+        algebra :: ListFunctor (Union (Const a) (Const [a])) :-> Const [a]
+        algebra (IxOutUnit (IxLeft _)) = Const []
+        algebra (IxOutUnit (IxRight xs)) = Const (x : xs')
+            where
+                (x, xs') = to xs
 
 instance Isomorphic [a] (List (Const a) '()) where
     from = fromList
 
     to = toList
+
+mapList :: forall a b. (a -> b) -> [a] -> [b]
+mapList f = to . (f' `ixmap`) . fromList
+    where
+        f' :: Const a :-> Const b
+        f' (Const x) = from $ f x
 
 cataList :: forall a b. (Either () (b, a) -> a) -> [b] -> a
 cataList algebra = to . (alg `ixcata`) . fromList
