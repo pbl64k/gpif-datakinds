@@ -22,6 +22,7 @@ module Control.IxFunctor.IxFunctor
         , liftConst
         , Union(UnionLeft, UnionRight)
         , split
+        , ParamPair
         , IxFunctor
         , ixmap
         , IxVoid
@@ -36,6 +37,7 @@ module Control.IxFunctor.IxFunctor
         , ixcata
         , ixana
         , ixhylo
+        , ixpara
         ) where
 
 data Equality a b where
@@ -67,8 +69,8 @@ liftConst :: (t -> v) -> Const t :-> Const v
 liftConst f (Const x) = Const $ f x
 
 data Union :: (t -> *) -> (v -> *) -> Either t v -> * where
-    UnionLeft :: xf t -> Union xf xg (Left t)
-    UnionRight :: xg v -> Union xf xg (Right v)
+    UnionLeft :: tf t -> Union tf tg (Left t)
+    UnionRight :: tg v -> Union tf tg (Right v)
 
 instance Isomorphic a (b ix) => Isomorphic a (Union b c (Left ix)) where
     from = UnionLeft . from
@@ -83,6 +85,14 @@ instance Isomorphic a (c ix) => Isomorphic a (Union b c (Right ix)) where
 split :: (t :-> v) -> (s :-> u) -> Union t s :-> Union v u
 split f _ (UnionLeft x) = UnionLeft $ f x
 split _ f (UnionRight x) = UnionRight $ f x
+
+data ParamPair :: (t -> *) -> (t -> *) -> t -> * where
+    ParamPair :: xf t -> xg t -> ParamPair xf xg t
+
+instance (Isomorphic a (c ix), Isomorphic b (d ix)) => Isomorphic (a, b) (ParamPair c d ix) where
+    from (x, y) = from x `ParamPair` from y
+
+    to (ParamPair x y) = (to x, to y)
 
 class IxFunctor (xf :: (inputIndex -> *) -> outputIndex -> *) where
     ixmap :: (t :-> v) -> xf t :-> xf v
@@ -218,4 +228,11 @@ ixhylo coalgebra algebra = algebra . (f `ixmap`) . coalgebra
     where
         f :: Union r s :-> Union r t
         f = id `split` (ixhylo coalgebra algebra)
+
+ixpara :: forall xf r s. xf (Union r (ParamPair s (IxFix xf r))) :-> s -> IxFix xf r :-> s
+algebra `ixpara` (IxIn x) = algebra (f `ixmap` x)
+    where
+        fanout f g x = f x `ParamPair` g x
+        f :: Union r (IxFix xf r) :-> Union r (ParamPair s (IxFix xf r))
+        f = id `split` ((algebra `ixpara`) `fanout` id)
 

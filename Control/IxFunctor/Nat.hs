@@ -15,6 +15,7 @@ module Control.IxFunctor.Nat
         , cataInteger
         , anaInteger
         , hyloInteger
+        , paraInteger
         ) where
 
 import Control.IxFunctor.IxFunctor
@@ -61,4 +62,13 @@ hyloInteger coalgebra algebra = to . ixhylo coalg alg . Const
         coalg (Const x) = from $ coalgebra x
         alg :: NatFunctor (Union (Const Void) (Const b)) :-> Const b
         alg (IxOutUnit x) = from $ algebra $ to x
+
+paraInteger :: forall a. (Either () (a, Integer) -> a) -> Integer -> a
+paraInteger algebra = to . (alg `ixpara`) . fromIntegerToNat
+    where
+        alg :: NatFunctor (Union (Const Void) (ParamPair (Const a) (Nat (Const Void)))) :-> Const a
+        alg (IxOutUnit x) = from $ algebra $ to x
+
+paraFactorial :: Integer -> Integer
+paraFactorial = paraInteger $ either (const 1) (\(n, x) -> n * succ x)
 
