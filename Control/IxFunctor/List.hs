@@ -16,6 +16,7 @@ module Control.IxFunctor.List
         , cataList
         , anaList
         , hyloList
+        , paraList
         ) where
 
 import Control.IxFunctor.IxFunctor
@@ -60,12 +61,18 @@ anaList coalgebra = toList . (coalg `ixana`) . from
         coalg :: Const a :-> ListFunctor (Union (Const b) (Const a))
         coalg (Const x) = from $ coalgebra x
 
-hyloList :: forall a b c. (a -> Either () (b, a)) -> (Either () (b, c) -> c) -> a -> c
-hyloList coalgebra algebra = to . ixhylo coalg alg . Const
+hyloList :: forall a b c. (Either () (b, c) -> c) -> (a -> Either () (b, a)) -> a -> c
+hyloList algebra coalgebra = to . ixhylo alg coalg . Const
     where
+        alg :: ListFunctor (Union (Const b) (Const c)) :-> Const c
+        alg (IxOutUnit x) = from $ algebra $ to x
         coalg :: Const a :-> ListFunctor (Union (Const b) (Const a))
         coalg (Const x) = from $ coalgebra x
-        alg :: ListFunctor (Union (Const b) (Const c)) :-> Const c
+
+paraList :: forall a b. (Either () (b, (a, [b])) -> a) -> [b] -> a
+paraList algebra = to . (alg `ixpara`) . fromList
+    where
+        alg :: ListFunctor (Union (Const b) (ParamPair (Const a) (List (Const b)))) :-> Const a
         alg (IxOutUnit x) = from $ algebra $ to x
 
 factorial :: Integer -> Integer
@@ -75,7 +82,7 @@ factorial = cataList (either (const 1) (uncurry (*))) . anaList coalg
         coalg n = Right (n, pred n)
 
 hyloFactorial :: Integer -> Integer
-hyloFactorial = hyloList coalg (either (const 1) (uncurry (*)))
+hyloFactorial = hyloList (either (const 1) (uncurry (*))) coalg
     where
         coalg 0 = Left ()
         coalg n = Right (n, pred n)

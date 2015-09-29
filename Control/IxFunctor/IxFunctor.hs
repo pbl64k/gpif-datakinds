@@ -223,11 +223,11 @@ coalgebra `ixana` x = IxIn $ f `ixmap` (coalgebra x)
         f = id `split` (coalgebra `ixana`)
 
 ixhylo :: forall xf r s t. IxFunctor xf =>
-        s :-> xf (Union r s) -> xf (Union r t) :-> t -> s :-> t
-ixhylo coalgebra algebra = algebra . (f `ixmap`) . coalgebra
+        xf (Union r t) :-> t -> s :-> xf (Union r s) -> s :-> t
+ixhylo algebra coalgebra = algebra . (f `ixmap`) . coalgebra
     where
         f :: Union r s :-> Union r t
-        f = id `split` (ixhylo coalgebra algebra)
+        f = id `split` (ixhylo algebra coalgebra)
 
 ixpara :: forall xf r s. xf (Union r (ParamPair s (IxFix xf r))) :-> s -> IxFix xf r :-> s
 algebra `ixpara` (IxIn x) = algebra (f `ixmap` x)

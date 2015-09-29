@@ -55,13 +55,13 @@ anaInteger coalgebra = toIntegerFromNat . (coalg `ixana`) . from
         coalg :: Const a :-> NatFunctor (Union (Const Void) (Const a))
         coalg (Const x) = from $ coalgebra x
 
-hyloInteger :: forall a b. (a -> Either () a) -> (Either () b -> b) -> a -> b
-hyloInteger coalgebra algebra = to . ixhylo coalg alg . Const
+hyloInteger :: forall a b. (Either () b -> b) -> (a -> Either () a) -> a -> b
+hyloInteger algebra coalgebra = to . ixhylo alg coalg . Const
     where
-        coalg :: Const a :-> NatFunctor (Union (Const Void) (Const a))
-        coalg (Const x) = from $ coalgebra x
         alg :: NatFunctor (Union (Const Void) (Const b)) :-> Const b
         alg (IxOutUnit x) = from $ algebra $ to x
+        coalg :: Const a :-> NatFunctor (Union (Const Void) (Const a))
+        coalg (Const x) = from $ coalgebra x
 
 paraInteger :: forall a. (Either () (a, Integer) -> a) -> Integer -> a
 paraInteger algebra = to . (alg `ixpara`) . fromIntegerToNat
