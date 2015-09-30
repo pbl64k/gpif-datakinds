@@ -25,7 +25,7 @@ type NatFunctor = ((IxUnit :+: IxProj (Right '())) :: (Either Void () -> *) -> (
 type Nat = IxFix NatFunctor
 
 fromIntegerToNat :: Integer -> Nat IxTVoid ix
-fromIntegerToNat = (coalgebra `ixana`) . IxTConst
+fromIntegerToNat = (coalgebra `ixana`) . from
     where
         coalgebra :: IxTConst Integer :-> NatFunctor (IxTVoid `IxTEither` IxTConst Integer)
         coalgebra (IxTConst 0) = IxLeft $ from ()
@@ -60,7 +60,7 @@ hyloInteger algebra coalgebra = isoToLeft $ ixhylo alg coalg
     where
         alg :: NatFunctor (IxTVoid `IxTEither` IxTConst b) :-> IxTConst b
         alg = isoToRight algebra
-        coalg :: IxTConst a :-> NatFunctor (IxTVoid `IxTEither` (IxTConst a))
+        coalg :: IxTConst a :-> NatFunctor (IxTVoid `IxTEither` IxTConst a)
         coalg = isoToRight coalgebra
 
 paraInteger :: forall a. (() `Either` (a, Integer) -> a) -> Integer -> a
@@ -70,5 +70,5 @@ paraInteger algebra = isoToLeft (alg `ixpara`)
         alg = isoToRight algebra
 
 paraFactorial :: Integer -> Integer
-paraFactorial = paraInteger $ either (const 1) (\(n, x) -> n * succ x)
+paraFactorial = paraInteger $ const 1 `either` \(n, x) -> n * succ x
 
