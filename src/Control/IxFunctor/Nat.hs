@@ -18,7 +18,7 @@ module Control.IxFunctor.Nat
         , paraInteger
         ) where
 
-import Control.IxFunctor.IxFunctor
+import Control.IxFunctor.RecScheme
 
 type NatFunctor = ((IxUnit :+: IxProj (Right '())) :: (Either Void () -> *) -> () -> *)
 
