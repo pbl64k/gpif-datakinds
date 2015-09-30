@@ -43,19 +43,19 @@ instance Isomorphic Integer (Nat IxTVoid ix) where
 
     to = toIntegerFromNat
 
-cataInteger :: forall a. (() `Either` a -> a) -> Integer -> a
+cataInteger :: forall a. (Maybe a -> a) -> Integer -> a
 cataInteger algebra = isoToLeft (alg `ixcata`)
     where
         alg :: NatFunctor (IxTVoid `IxTEither` IxTConst a) :-> IxTConst a
         alg = isoToRight algebra
 
-anaInteger :: forall a. (a -> () `Either` a) -> a -> Integer
+anaInteger :: forall a. (a -> Maybe a) -> a -> Integer
 anaInteger coalgebra = isoToLeft (coalg `ixana`)
     where
         coalg :: IxTConst a :-> NatFunctor (IxTVoid `IxTEither` IxTConst a)
         coalg = isoToRight coalgebra
 
-hyloInteger :: forall a b. (() `Either` b -> b) -> (a -> () `Either` a) -> a -> b
+hyloInteger :: forall a b. (Maybe b -> b) -> (a -> Maybe a) -> a -> b
 hyloInteger algebra coalgebra = isoToLeft $ ixhylo alg coalg
     where
         alg :: NatFunctor (IxTVoid `IxTEither` IxTConst b) :-> IxTConst b
@@ -63,12 +63,12 @@ hyloInteger algebra coalgebra = isoToLeft $ ixhylo alg coalg
         coalg :: IxTConst a :-> NatFunctor (IxTVoid `IxTEither` IxTConst a)
         coalg = isoToRight coalgebra
 
-paraInteger :: forall a. (() `Either` (a, Integer) -> a) -> Integer -> a
+paraInteger :: forall a. (Maybe (a, Integer) -> a) -> Integer -> a
 paraInteger algebra = isoToLeft (alg `ixpara`)
     where
         alg :: NatFunctor (IxTVoid `IxTEither` (IxTConst a `IxTPair` Nat IxTVoid)) :-> IxTConst a
         alg = isoToRight algebra
 
 paraFactorial :: Integer -> Integer
-paraFactorial = paraInteger $ const 1 `either` \(n, x) -> n * succ x
+paraFactorial = paraInteger $ 1 `maybe` \(n, x) -> n * succ x
 

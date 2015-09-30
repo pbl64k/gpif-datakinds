@@ -89,6 +89,14 @@ instance (IxFunctor c, IxFunctor d, Isomorphic a (c r o), Isomorphic b (d r o)) 
     to (IxLeft x) = Left $ to x
     to (IxRight x) = Right $ to x
 
+instance (IxFunctor c, IxFunctor d, Isomorphic () (c r o), Isomorphic b (d r o)) =>
+        Isomorphic (Maybe b) ((c :+: d) r o) where
+    from Nothing = IxLeft $ from ()
+    from (Just x) = IxRight $ from x
+
+    to (IxLeft _) = Nothing
+    to (IxRight x) = Just $ to x
+
 data (:*:) ::
         ((inputIndex -> *) -> outputIndex -> *) ->
         ((inputIndex -> *) -> outputIndex -> *) ->
