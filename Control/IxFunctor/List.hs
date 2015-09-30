@@ -21,27 +21,27 @@ module Control.IxFunctor.List
 
 import Control.IxFunctor.IxFunctor
 
-type ListFunctor = IxOutUnit (IxUnit :+: (IxProj (Left '()) :*: IxProj (Right '())))
+type ListFunctor = ((IxUnit :+: (IxProj (Left '()) :*: IxProj (Right '()))) :: (Either () () -> *) -> () -> *)
 
 type List = IxFix ListFunctor
 
-fromList :: forall a. [a] -> List (Const a) '()
+fromList :: forall a ix. [a] -> List (Const a) ix
 fromList = (coalgebra `ixana`) . Const
     where
         coalgebra :: Const [a] :-> ListFunctor (Union (Const a) (Const [a]))
-        coalgebra (Const []) = IxOutUnit $ IxLeft IxUnit
-        coalgebra (Const (x : xs)) = IxOutUnit $ IxRight $ from (x, xs)
+        coalgebra (Const []) = IxLeft $ from ()
+        coalgebra (Const (x : xs)) = IxRight $ from (x, xs)
 
-toList :: forall a. List (Const a) '() -> [a]
+toList :: forall a ix. List (Const a) ix -> [a]
 toList = to . (algebra `ixcata`)
     where
         algebra :: ListFunctor (Union (Const a) (Const [a])) :-> Const [a]
-        algebra (IxOutUnit (IxLeft _)) = Const []
-        algebra (IxOutUnit (IxRight xs)) = Const (x : xs')
+        algebra (IxLeft _) = Const []
+        algebra (IxRight xs) = Const (x : xs')
             where
                 (x, xs') = to xs
 
-instance Isomorphic [a] (List (Const a) '()) where
+instance Isomorphic [a] (List (Const a) ix) where
     from = fromList
 
     to = toList
@@ -50,30 +50,30 @@ mapList :: (a -> b) -> [a] -> [b]
 mapList f = to . (liftConst f `ixmap`) . fromList
 
 cataList :: forall a b. (Either () (b, a) -> a) -> [b] -> a
-cataList algebra = to . (alg `ixcata`) . fromList
+cataList algebra = isoToLeft (alg `ixcata`)
     where
         alg :: ListFunctor (Union (Const b) (Const a)) :-> Const a
-        alg (IxOutUnit x) = from $ algebra $ to x
+        alg = isoToRight algebra
 
 anaList :: forall a b. (a -> Either () (b, a)) -> a -> [b]
-anaList coalgebra = toList . (coalg `ixana`) . from
+anaList coalgebra = isoToLeft (coalg `ixana`)
     where
         coalg :: Const a :-> ListFunctor (Union (Const b) (Const a))
-        coalg (Const x) = from $ coalgebra x
+        coalg = isoToRight coalgebra
 
 hyloList :: forall a b c. (Either () (b, c) -> c) -> (a -> Either () (b, a)) -> a -> c
-hyloList algebra coalgebra = to . ixhylo alg coalg . Const
+hyloList algebra coalgebra = isoToLeft $ ixhylo alg coalg
     where
         alg :: ListFunctor (Union (Const b) (Const c)) :-> Const c
-        alg (IxOutUnit x) = from $ algebra $ to x
+        alg = isoToRight algebra
         coalg :: Const a :-> ListFunctor (Union (Const b) (Const a))
-        coalg (Const x) = from $ coalgebra x
+        coalg = isoToRight coalgebra
 
 paraList :: forall a b. (Either () (b, (a, [b])) -> a) -> [b] -> a
-paraList algebra = to . (alg `ixpara`) . fromList
+paraList algebra = isoToLeft (alg `ixpara`)
     where
         alg :: ListFunctor (Union (Const b) (ParamPair (Const a) (List (Const b)))) :-> Const a
-        alg (IxOutUnit x) = from $ algebra $ to x
+        alg = isoToRight algebra
 
 factorial :: Integer -> Integer
 factorial = cataList (either (const 1) (uncurry (*))) . anaList coalg

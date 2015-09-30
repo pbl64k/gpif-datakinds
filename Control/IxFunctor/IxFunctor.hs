@@ -12,12 +12,15 @@
 {-# LANGUAGE IncoherentInstances #-}
 
 module Control.IxFunctor.IxFunctor
-        ( Equality(Reflexivity)
+        ( Void
+        , Equality(Reflexivity)
         , Isomorphic
         , from
         , to
+        , isoToLeft
+        , isoToRight
         , (:->)
-        , Void
+        , IxTVoid
         , Const(Const)
         , liftConst
         , Union(UnionLeft, UnionRight)
@@ -31,14 +34,16 @@ module Control.IxFunctor.IxFunctor
         , (:*:)(IxProd)
         , (:.:)(IxComp)
         , IxProj(IxProj)
-        , IxOutUnit(IxOutUnit)
         , IxOut(IxOut)
         , IxFix(IxIn)
         , ixcata
         , ixana
         , ixhylo
+        , ixmeta
         , ixpara
         ) where
+
+data Void = Void
 
 data Equality a b where
     Reflexivity :: Equality a a
@@ -53,14 +58,21 @@ instance Isomorphic a a where
 
     to = id
 
+isoToLeft :: (Isomorphic c a, Isomorphic d b) => (a -> b) -> c -> d
+isoToLeft f = to . f . from
+
+isoToRight :: (Isomorphic a c, Isomorphic b d) => (a -> b) -> c -> d
+isoToRight f = from . f . to
+
 type t :-> v = forall ix. t ix -> v ix
 
-data Void
+data IxTVoid :: Void -> * where
+    IxTVoid :: IxTVoid 'Void
 
 data Const :: * -> () -> * where
-    Const :: t -> Const t '()
+    Const :: t -> Const t ix
 
-instance Isomorphic a b => Isomorphic a (Const b '()) where
+instance Isomorphic a b => Isomorphic a (Const b ix) where
     from = Const . from
 
     to (Const x) = to x
@@ -179,19 +191,6 @@ instance Isomorphic a (r i) => Isomorphic a (IxProj i r o) where
 
     to (IxProj x) = to x
 
-data IxOutUnit ::
-        ((inputIndex -> *) -> () -> *) ->
-        (inputIndex -> *) -> () -> * where
-    IxOutUnit :: xf r '() -> IxOutUnit xf r '()
-
-instance IxFunctor xf => IxFunctor (IxOutUnit xf) where
-    f `ixmap` (IxOutUnit xf) = IxOutUnit $ f `ixmap` xf
-
-instance (IxFunctor xf, Isomorphic a (xf r '())) => Isomorphic a (IxOutUnit xf r '()) where
-    from = IxOutUnit . from
-
-    to (IxOutUnit x) = to x
-
 data IxOut :: outputIndex -> (inputIndex -> *) -> outputIndex -> * where
     IxOut :: Equality o' o -> IxOut o' r o
 
@@ -229,10 +228,18 @@ ixhylo algebra coalgebra = algebra . (f `ixmap`) . coalgebra
         f :: Union r s :-> Union r t
         f = id `split` (ixhylo algebra coalgebra)
 
+ixmeta :: forall xf xg r s t. (IxFunctor xf, IxFunctor xg) =>
+        s :-> xg (Union t s) -> xf (Union r s) :-> s -> IxFix xf r :-> IxFix xg t
+-- Oh, who cares...
+ixmeta coalgebra algebra = (coalgebra `ixana`) . (algebra `ixcata`)
+
 ixpara :: forall xf r s. xf (Union r (ParamPair s (IxFix xf r))) :-> s -> IxFix xf r :-> s
 algebra `ixpara` (IxIn x) = algebra (f `ixmap` x)
     where
         fanout f g x = f x `ParamPair` g x
         f :: Union r (IxFix xf r) :-> Union r (ParamPair s (IxFix xf r))
         f = id `split` ((algebra `ixpara`) `fanout` id)
+
+--ixapo :: forall xf r s. s :-> xf (Union r (Union s (IxFix xf r))) -> s :-> IxFix xf r
+--coalgebra `ixapo` x = IxIn $ _ `ixmap` (coalgebra x)
 
