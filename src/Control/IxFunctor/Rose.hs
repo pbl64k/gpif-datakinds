@@ -7,12 +7,17 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeOperators #-}
 
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
+
 module Control.IxFunctor.Rose
         ( RoseFunctor
         , Rose
         , fromRose
         , toRose
-        --, mapRose
+        , mapRose
         --, cataRose
         --, anaRose
         --, hyloRose
@@ -27,7 +32,24 @@ import Control.IxFunctor.IxFunctor
 import Control.IxFunctor.RecScheme
 import Control.IxFunctor.List
 
-data RoseTree a = RoseTree a [RoseTree a]
+instance Show (a ix) => Show (IxTEither a b (Left ix)) where
+    show (IxTEitherLeft x) = "IxTEitherLeft " ++ show x
+
+instance Show (b ix) => Show (IxTEither a b (Right ix)) where
+    show (IxTEitherRight x) = "IxTEitherRight " ++ show x
+
+deriving instance Show (Equality a b)
+deriving instance Show a => Show (IxTConst a ix)
+deriving instance Show (IxVoid r o)
+deriving instance Show (IxUnit r o)
+deriving instance (Show (a r o), Show (b r o)) => Show ((a :+: b) r o)
+deriving instance (Show (a r o), Show (b r o)) => Show ((a :*: b) r o)
+deriving instance Show (a (b r) o) => Show ((a :.: b) r o)
+deriving instance Show (r i) => Show (IxProj i r o)
+deriving instance Show (IxOut o' r o)
+deriving instance Show (a (IxTEither r (IxFix a r)) o) => Show (IxFix a r o)
+
+data RoseTree a = RoseTree a [RoseTree a] deriving Show
 
 type RoseFunctor = ((IxProj (Left '()) :*: (List :.: IxProj (Right '()))) :: (Either () () -> *) -> () -> *)
 
@@ -40,7 +62,7 @@ fromRose = (coalgebra `ixana`) . from
         coalgebra (IxTConst (RoseTree x xs)) = from (x, conv `ixmap` xs')
             where
                 xs' :: List (IxTConst (RoseTree a)) ix
-                xs' = from xs
+                xs' = fromList xs
                 f :: RoseTree a -> IxProj (Right '()) (IxTConst a `IxTEither` IxTConst (RoseTree a)) ix0
                 f = from
                 g :: IxTConst (RoseTree a) ix0 -> RoseTree a
@@ -52,7 +74,7 @@ toRose :: forall a ix. Rose (IxTConst a) ix -> RoseTree a
 toRose = to . (algebra `ixcata`)
     where
         algebra :: forall ix. RoseFunctor (IxTConst a `IxTEither` IxTConst (RoseTree a)) ix -> IxTConst (RoseTree a) ix
-        algebra xs = from $ RoseTree x (to xs'')
+        algebra xs = from $ RoseTree x (toList xs'')
             where
                 z :: (a, List (IxProj (Right '()) (IxTConst a `IxTEither` IxTConst (RoseTree a))) ix)
                 z@(x, xs') = to xs
@@ -64,4 +86,12 @@ toRose = to . (algebra `ixcata`)
                 conv = f . g
                 xs'' :: List (IxTConst (RoseTree a)) ix
                 xs'' = conv `ixmap` xs'
+
+instance Isomorphic a b => Isomorphic (RoseTree a) (Rose (IxTConst b) ix) where
+    from = fromRose . (from `mapRose`)
+
+    to = (to `mapRose`) . toRose
+
+mapRose :: (a -> b) -> RoseTree a -> RoseTree b
+mapRose f = toRose . (liftIxTConst f `ixmap`) . fromRose
 
