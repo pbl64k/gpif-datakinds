@@ -15,10 +15,10 @@ module Control.IxFunctor.Rose
         , toRose
         , mapRose
         , cataRose
-        --, anaRose
-        --, hyloRose
-        --, paraRose
-        --, apoRose
+        , anaRose
+        , hyloRose
+        , paraRose
+        , apoRose
         ) where
 
 import Control.IxFunctor.Equality
@@ -27,23 +27,6 @@ import Control.IxFunctor.IxType
 import Control.IxFunctor.IxFunctor
 import Control.IxFunctor.RecScheme
 import Control.IxFunctor.List
-
---instance Show (a ix) => Show (IxTEither a b (Left ix)) where
---    show (IxTEitherLeft x) = "IxTEitherLeft " ++ show x
---
---instance Show (b ix) => Show (IxTEither a b (Right ix)) where
---    show (IxTEitherRight x) = "IxTEitherRight " ++ show x
---
---deriving instance Show (Equality a b)
---deriving instance Show a => Show (IxTConst a ix)
---deriving instance Show (IxVoid r o)
---deriving instance Show (IxUnit r o)
---deriving instance (Show (a r o), Show (b r o)) => Show ((a :+: b) r o)
---deriving instance (Show (a r o), Show (b r o)) => Show ((a :*: b) r o)
---deriving instance Show (a (b r) o) => Show ((a :.: b) r o)
---deriving instance Show (r i) => Show (IxProj i r o)
---deriving instance Show (IxOut o' r o)
---deriving instance Show (a (IxTEither r (IxFix a r)) o) => Show (IxFix a r o)
 
 data RoseTree a = RoseTree a [RoseTree a] deriving Show
 
@@ -76,4 +59,30 @@ cataRose algebra = isoToLeft (alg `ixcata`)
     where
         alg :: RoseFunctor (IxTConst a `IxTEither` IxTConst b) :-> IxTConst b
         alg = isoToRight algebra
+
+anaRose :: forall a b. (b -> (a, [b])) -> b -> RoseTree a
+anaRose coalgebra = isoToLeft (coalg `ixana`)
+    where
+        coalg :: IxTConst b :-> RoseFunctor (IxTConst a `IxTEither` IxTConst b)
+        coalg = isoToRight coalgebra
+
+hyloRose :: forall a b c. ((b, [c]) -> c) -> (a -> (b, [a])) -> a -> c
+hyloRose algebra coalgebra = isoToLeft (ixhylo alg coalg)
+    where
+        alg :: RoseFunctor (IxTConst b `IxTEither` IxTConst c) :-> IxTConst c
+        alg = isoToRight algebra
+        coalg :: IxTConst a :-> RoseFunctor (IxTConst b `IxTEither` IxTConst a)
+        coalg = isoToRight coalgebra
+
+paraRose :: forall a b. ((a, [(b, RoseTree a)]) -> b) -> RoseTree a -> b
+paraRose algebra = isoToLeft (alg `ixpara`)
+    where
+        alg :: RoseFunctor (IxTConst a `IxTEither` (IxTConst b `IxTPair` Rose (IxTConst a))) :-> IxTConst b
+        alg = isoToRight algebra
+
+apoRose :: forall a b. (b -> (a, [Either b (RoseTree a)])) -> b -> RoseTree a
+apoRose coalgebra = isoToLeft (coalg `ixapo`)
+    where
+        coalg :: IxTConst b :-> RoseFunctor (IxTConst a `IxTEither` (IxTConst b `IxTChoice` Rose (IxTConst a)))
+        coalg = isoToRight coalgebra
 
