@@ -30,7 +30,7 @@ type t :-> v = forall ix. t ix -> v ix
 data IxTVoid :: Void -> * where
     IxTVoid :: IxTVoid 'Void
 
-data IxTConst :: * -> () -> * where
+data IxTConst :: * -> ix -> * where
     IxTConst :: t -> IxTConst t ix
 
 instance Isomorphic a b => Isomorphic a (IxTConst b ix) where

@@ -9,7 +9,8 @@
 {-# LANGUAGE TypeOperators #-}
 
 module Control.IxFunctor.Rose
-        ( RoseFunctor
+        ( RoseTree(RoseTree)
+        , RoseFunctor
         , Rose
         , fromRose
         , toRose
