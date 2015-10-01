@@ -95,3 +95,15 @@ instance Isomorphic a b => Isomorphic (RoseTree a) (Rose (IxTConst b) ix) where
 mapRose :: (a -> b) -> RoseTree a -> RoseTree b
 mapRose f = toRose . (liftIxTConst f `ixmap`) . fromRose
 
+--cataRose :: forall a b. ((a, [b]) -> b) -> RoseTree a -> b
+--cataRose algebra = isoToLeft (alg `ixcata`)
+--    where
+--        alg :: RoseFunctor (IxTConst a `IxTEither` IxTConst b) :-> IxTConst b
+--        alg = isoToRight algebra
+
+x :: IxProj (Right '()) (IxTEither (IxTConst Bool) (IxTConst Integer)) ix
+x = IxProj $ IxTEitherRight $ IxTConst 5
+
+z :: Integer
+z = to x
+

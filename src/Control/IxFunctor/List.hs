@@ -31,26 +31,27 @@ type ListFunctor = ((IxUnit :+: (IxProj (Left '()) :*: IxProj (Right '()))) :: (
 
 type List = IxFix ListFunctor
 
-fromList :: forall a ix. [a] -> List (IxTConst a) ix
+fromList :: forall a b ix. Isomorphic a (b '()) => [a] -> List b ix
 fromList = (coalgebra `ixana`) . from
     where
-        coalgebra :: IxTConst [a] :-> ListFunctor (IxTConst a `IxTEither` IxTConst [a])
+        coalgebra :: IxTConst [a] :-> ListFunctor (b `IxTEither` IxTConst [a])
         coalgebra (IxTConst []) = IxLeft $ from ()
         coalgebra (IxTConst (x : xs)) = IxRight $ from (x, xs)
 
-toList :: forall a ix. List (IxTConst a) ix -> [a]
+toList :: forall a b ix. Isomorphic a (b '()) => List b ix -> [a]
 toList = to . (algebra `ixcata`)
     where
-        algebra :: ListFunctor (IxTConst a `IxTEither` IxTConst [a]) :-> IxTConst [a]
+        algebra :: ListFunctor (b `IxTEither` IxTConst [a]) :-> IxTConst [a]
         algebra (IxLeft _) = IxTConst []
-        algebra (IxRight xs) = IxTConst (x : xs')
+        algebra (IxRight xs) = IxTConst (to x : xs')
             where
-                (x, xs') = to xs
+                z :: (b '(), [a])
+                z@(x, xs') = to xs
 
-instance Isomorphic a b => Isomorphic [a] (List (IxTConst b) ix) where
-    from = fromList . (from `mapList`)
+instance Isomorphic a (b '()) => Isomorphic [a] (List b ix) where
+    from = fromList
 
-    to = (to `mapList`) . toList
+    to = toList
 
 mapList :: (a -> b) -> [a] -> [b]
 mapList f = to . (liftIxTConst f `ixmap`) . fromList
