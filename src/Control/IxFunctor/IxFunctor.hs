@@ -25,6 +25,8 @@ module Control.IxFunctor.IxFunctor
         , liftIxTConst
         , IxTEither(IxTEitherLeft, IxTEitherRight)
         , split
+        , IxTTuple(IxTTuple)
+        , IxTChoice(IxTChoiceLeft, IxTChoiceRight)
         , IxTPair(IxTPair)
         , IxFunctor
         , ixmap

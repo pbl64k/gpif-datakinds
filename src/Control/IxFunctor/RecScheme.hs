@@ -67,7 +67,6 @@ ixhylo algebra coalgebra = algebra . (f `ixmap`) . coalgebra
 
 ixmeta :: forall xf xg r s t. (IxFunctor xf, IxFunctor xg) =>
         s :-> xg (t `IxTEither` s) -> xf (r `IxTEither` s) :-> s -> IxFix xf r :-> IxFix xg t
--- Oh, who cares...
 ixmeta coalgebra algebra = (coalgebra `ixana`) . (algebra `ixcata`)
 
 ixpara :: forall xf r s. IxFunctor xf =>
@@ -79,7 +78,6 @@ ixpara algebra = algebra . (f `ixmap`) . ixunfix
             where
                 fanout f g x = f x `IxTPair` g x
 
--- Darn!
---ixapo :: forall xf r s. s :-> xf (IxTEither r (IxTEither s (IxFix xf r))) -> s :-> IxFix xf r
---ixapo = undefined
+ixapo :: forall xf r s. s :-> xf (IxTEither r (IxTChoice s (IxFix xf r))) -> s :-> IxFix xf r
+ixapo = undefined
 

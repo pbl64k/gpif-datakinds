@@ -5,6 +5,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeOperators #-}
 
 module Control.IxFunctor.List
@@ -41,10 +42,10 @@ toList = to . (algebra `ixcata`)
             where
                 (x, xs') = to xs
 
-instance Isomorphic [a] (List (IxTConst a) ix) where
-    from = fromList
+instance Isomorphic a b => Isomorphic [a] (List (IxTConst b) ix) where
+    from = fromList . (from `mapList`)
 
-    to = toList
+    to = (to `mapList`) . toList
 
 mapList :: (a -> b) -> [a] -> [b]
 mapList f = to . (liftIxTConst f `ixmap`) . fromList
