@@ -18,6 +18,7 @@ module Control.IxFunctor.List
         , anaList
         , hyloList
         , paraList
+        , apoList
         ) where
 
 import Control.IxFunctor.Equality
@@ -79,6 +80,12 @@ paraList algebra = isoToLeft (alg `ixpara`)
     where
         alg :: ListFunctor (IxTConst b `IxTEither` (IxTConst a `IxTPair` List (IxTConst b))) :-> IxTConst a
         alg = isoToRight algebra
+
+apoList :: forall a b. (a -> Maybe (b, (Either a [b]))) -> a -> [b]
+apoList coalgebra = isoToLeft (coalg `ixapo`)
+    where
+        coalg :: IxTConst a :-> ListFunctor (IxTConst b `IxTEither` (IxTConst a `IxTChoice` List (IxTConst b)))
+        coalg = isoToRight coalgebra
 
 factorial :: Integer -> Integer
 factorial = cataList (1 `maybe` uncurry (*)) . anaList coalg

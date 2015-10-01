@@ -17,6 +17,7 @@ module Control.IxFunctor.Rose
         --, anaRose
         --, hyloRose
         --, paraRose
+        --, apoRose
         ) where
 
 import Control.IxFunctor.Equality

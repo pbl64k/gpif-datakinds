@@ -57,6 +57,13 @@ ixpara algebra = algebra . (f `ixmap`) . ixunfix
             where
                 fanout f g x = f x `IxTPair` g x
 
-ixapo :: forall xf r s. s :-> xf (IxTEither r (IxTChoice s (IxFix xf r))) -> s :-> IxFix xf r
-ixapo = undefined
+ixapo :: forall xf r s. IxFunctor xf =>
+        s :-> xf (r `IxTEither` (s `IxTChoice` IxFix xf r)) -> s :-> IxFix xf r
+ixapo coalgebra = IxFix . (f `ixmap`) . coalgebra
+    where
+        f :: IxTEither r (s `IxTChoice` IxFix xf r) :-> IxTEither r (IxFix xf r)
+        f = id `split` ((coalgebra `ixapo`) `choice` id)
+            where
+                choice f _ (IxTChoiceLeft x) = f x
+                choice _ f (IxTChoiceRight x) = f x
 

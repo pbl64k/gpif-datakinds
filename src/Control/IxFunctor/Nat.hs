@@ -16,6 +16,7 @@ module Control.IxFunctor.Nat
         , anaInteger
         , hyloInteger
         , paraInteger
+        , apoInteger
         ) where
 
 import Control.IxFunctor.Equality
@@ -72,6 +73,12 @@ paraInteger algebra = isoToLeft (alg `ixpara`)
     where
         alg :: NatFunctor (IxTVoid `IxTEither` (IxTConst a `IxTPair` Nat IxTVoid)) :-> IxTConst a
         alg = isoToRight algebra
+
+apoInteger :: forall a. (a -> Maybe (Either a Integer)) -> a -> Integer
+apoInteger coalgebra = isoToLeft (coalg `ixapo`)
+    where
+        coalg :: IxTConst a :-> NatFunctor (IxTVoid `IxTEither` (IxTConst a `IxTChoice` Nat IxTVoid))
+        coalg = isoToRight coalgebra
 
 paraFactorial :: Integer -> Integer
 paraFactorial = paraInteger $ 1 `maybe` \(n, x) -> n * succ x
