@@ -20,6 +20,10 @@ module Control.IxFunctor.List
         , paraList
         ) where
 
+import Control.IxFunctor.Equality
+import Control.IxFunctor.Iso
+import Control.IxFunctor.IxType
+import Control.IxFunctor.IxFunctor
 import Control.IxFunctor.RecScheme
 
 type ListFunctor = ((IxUnit :+: (IxProj (Left '()) :*: IxProj (Right '()))) :: (Either () () -> *) -> () -> *)

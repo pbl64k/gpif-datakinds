@@ -2,9 +2,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 
 module Control.IxFunctor.Iso
-    ( Isomorphic
-    , from
-    , to
+    ( Isomorphic(from, to)
     , isoToLeft
     , isoToRight
     ) where

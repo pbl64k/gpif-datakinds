@@ -12,38 +12,17 @@
 {-# LANGUAGE IncoherentInstances #-}
 
 module Control.IxFunctor.RecScheme
-        ( Void
-        , Equality(Reflexivity)
-        , Isomorphic
-        , from
-        , to
-        , isoToLeft
-        , isoToRight
-        , (:->)
-        , IxTVoid
-        , IxTConst(IxTConst)
-        , liftIxTConst
-        , IxTEither(IxTEitherLeft, IxTEitherRight)
-        , split
-        , IxTPair(IxTPair)
-        , IxFunctor
-        , ixmap
-        , IxVoid
-        , IxUnit(IxUnit)
-        , (:+:)(IxLeft, IxRight)
-        , (:*:)(IxProd)
-        , (:.:)(IxComp)
-        , IxProj(IxProj)
-        , IxOut(IxOut)
-        , IxFix(IxFix)
-        , ixunfix
-        , ixcata
+        ( ixcata
         , ixana
         , ixhylo
         , ixmeta
         , ixpara
+        , ixapo
         ) where
 
+import Control.IxFunctor.Equality
+import Control.IxFunctor.Iso
+import Control.IxFunctor.IxType
 import Control.IxFunctor.IxFunctor
 
 ixcata :: forall xf r s. IxFunctor xf => xf (r `IxTEither` s) :-> s -> IxFix xf r :-> s

@@ -19,6 +19,10 @@ module Control.IxFunctor.Rose
         --, paraRose
         ) where
 
+import Control.IxFunctor.Equality
+import Control.IxFunctor.Iso
+import Control.IxFunctor.IxType
+import Control.IxFunctor.IxFunctor
 import Control.IxFunctor.RecScheme
 import Control.IxFunctor.List
 

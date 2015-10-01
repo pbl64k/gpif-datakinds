@@ -9,12 +9,7 @@
 {-# LANGUAGE IncoherentInstances #-}
 
 module Control.IxFunctor.IxType
-        ( Isomorphic
-        , from
-        , to
-        , isoToLeft
-        , isoToRight
-        , Void
+        ( Void
         , (:->)
         , IxTVoid(IxTVoid)
         , IxTConst(IxTConst)

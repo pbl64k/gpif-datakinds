@@ -3,4 +3,6 @@
 *.o
 .cabal*
 cabal.*
+docs/
+docs.sh
 

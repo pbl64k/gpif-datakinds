@@ -12,24 +12,7 @@
 {-# LANGUAGE IncoherentInstances #-}
 
 module Control.IxFunctor.IxFunctor
-        ( Void
-        , Equality(Reflexivity)
-        , Isomorphic
-        , from
-        , to
-        , isoToLeft
-        , isoToRight
-        , (:->)
-        , IxTVoid
-        , IxTConst(IxTConst)
-        , liftIxTConst
-        , IxTEither(IxTEitherLeft, IxTEitherRight)
-        , split
-        , IxTTuple(IxTTuple)
-        , IxTChoice(IxTChoiceLeft, IxTChoiceRight)
-        , IxTPair(IxTPair)
-        , IxFunctor
-        , ixmap
+        ( IxFunctor(ixmap)
         , IxVoid
         , IxUnit(IxUnit)
         , (:+:)(IxLeft, IxRight)
@@ -42,6 +25,7 @@ module Control.IxFunctor.IxFunctor
         ) where
 
 import Control.IxFunctor.Equality
+import Control.IxFunctor.Iso
 import Control.IxFunctor.IxType
 
 class IxFunctor (xf :: (inputIndex -> *) -> outputIndex -> *) where
