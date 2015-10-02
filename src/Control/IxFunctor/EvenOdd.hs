@@ -8,6 +8,21 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeOperators #-}
 
+{-|
+Module      : Control.IxFunctor.EvenOdd
+Description : Even-odd lists
+Copyright   : Pavel Lepin, 2015
+License     : BSD2
+Maintainer  : pbl64k@gmail.com
+Stability   : experimental
+Portability : GHC >= 7.8
+
+A contrived example demonstrating the encoding of families of mutually recursive data types
+and multiple type parameters. Since even the concrete instantiations of anamorphisms have grown
+to be quite complicated, unwieldy and impractical, I'm omitting hylos, apos and all that zoo
+for fear of my own sanity.
+-}
+
 module Control.IxFunctor.EvenOdd
         ( Even(ENil, ECons)
         , Odd(OCons)
@@ -33,14 +48,16 @@ data Even a b = ENil | ECons a (Odd a b) deriving Show
 
 data Odd a b = OCons b (Even a b) deriving Show
 
-type EO a b = Either (Even a b) (Odd a b)
-
+-- |Base functor for even-odd lists. Uses `IxOut` to enforce the invariant.
 type EvenOddFunctor =
         (((IxOut (Left '()) :*: (IxUnit :+: (IxProj (Left (Left '())) :*: IxProj (Right (Right '())))))
         :+:
         (IxOut (Right '()) :*: (IxProj (Left (Right '())) :*: IxProj (Right (Left '())))))
         :: (Either (Either () ()) (Either () ()) -> *) -> Either () () -> *)
 
+-- |Indexed functor accepting two type parameters (in form of an indexed types)
+-- and producing a family of two mutually recursive types isomorphic to `Even`
+-- and `Odd` above.
 type EvenOdd = IxFix EvenOddFunctor
 
 fromEven :: forall a b c d. (Isomorphic a (c '()), Isomorphic b (d '())) =>

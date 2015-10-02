@@ -8,6 +8,18 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeOperators #-}
 
+{-|
+Module      : Control.IxFunctor.Rose
+Description : Rose trees
+Copyright   : Pavel Lepin, 2015
+License     : BSD2
+Maintainer  : pbl64k@gmail.com
+Stability   : experimental
+Portability : GHC >= 7.8
+
+Rose trees encoded through indexed functors.
+-}
+
 module Control.IxFunctor.Rose
         ( RoseTree(RoseTree)
         , RoseFunctor
@@ -29,10 +41,14 @@ import Control.IxFunctor.IxFunctor
 import Control.IxFunctor.RecScheme
 import Control.IxFunctor.List
 
+-- |Rose trees as a standard algebraic data type
 data RoseTree a = RoseTree a [RoseTree a] deriving Show
 
+-- |Base functor for rose trees: X. A x List(X(A)). Note that this uses the
+-- previously defined `List` functor and functor composition.
 type RoseFunctor = ((IxProj (Left '()) :*: (List :.: IxProj (Right '()))) :: (Either () () -> *) -> () -> *)
 
+-- |Fix X. A x List(X(A))
 type Rose = IxFix RoseFunctor
 
 fromRose :: forall a b ix. Isomorphic a (b '()) => RoseTree a -> Rose b ix

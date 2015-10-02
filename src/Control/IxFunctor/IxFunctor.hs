@@ -11,6 +11,18 @@
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE IncoherentInstances #-}
 
+{-|
+Module      : Control.IxFunctor.IxFunctor
+Description : Indexed functors and functor combinators
+Copyright   : Pavel Lepin, 2015
+License     : BSD2
+Maintainer  : pbl64k@gmail.com
+Stability   : experimental
+Portability : GHC >= 7.8
+
+Functors and combinators used for encoding algebraic data types.
+-}
+
 module Control.IxFunctor.IxFunctor
         ( IxFunctor(ixmap)
         , IxVoid
@@ -28,9 +40,16 @@ import Control.IxFunctor.Equality
 import Control.IxFunctor.Iso
 import Control.IxFunctor.IxType
 
+-- |Indexed functors map indexed types (and associated arrows) to indexed types.
+-- Being parametrized by an indexed type is essentially the same thing as being
+-- parametrized by an arbitrary number of type parameters.
 class IxFunctor (xf :: (inputIndex -> *) -> outputIndex -> *) where
+
+    -- |Generalizes functorial `fmap`, bifunctorial `bimap` and all n-ary maps
+    -- for covariant n-ary functors.
     ixmap :: (t :-> v) -> xf t :-> xf v
 
+-- |Void functor.
 data IxVoid :: (inputIndex -> *) -> outputIndex -> *
 
 instance IxFunctor IxVoid where
@@ -41,6 +60,7 @@ instance Isomorphic Void (IxVoid r o) where
 
     to = undefined
 
+-- |Unit functor maps everything to unit type.
 data IxUnit :: (inputIndex -> *) -> outputIndex -> * where
     IxUnit :: IxUnit r o
 
@@ -52,6 +72,7 @@ instance Isomorphic () (IxUnit r o) where
 
     to _ = ()
 
+-- |Sum of two indexed functors is also an indexed functor.
 data (:+:) ::
         ((inputIndex -> *) -> outputIndex -> *) ->
         ((inputIndex -> *) -> outputIndex -> *) ->
@@ -79,6 +100,7 @@ instance (IxFunctor c, IxFunctor d, Isomorphic () (c r o), Isomorphic b (d r o))
     to (IxLeft _) = Nothing
     to (IxRight x) = Just $ to x
 
+-- |Same with products.
 data (:*:) ::
         ((inputIndex -> *) -> outputIndex -> *) ->
         ((inputIndex -> *) -> outputIndex -> *) ->
@@ -94,6 +116,7 @@ instance (IxFunctor c, IxFunctor d, Isomorphic a (c r o), Isomorphic b (d r o)) 
 
     to (a `IxProd` b) = (to a, to b)
 
+-- |Functors can be composed, subject to unsurprising restrictions on index compatibility.
 data (:.:) ::
         ((intermIndex -> *) -> outputIndex -> *) ->
         ((inputIndex -> *) -> intermIndex -> *) ->
@@ -110,6 +133,8 @@ instance (IxFunctor xf, IxFunctor xg, Isomorphic a (xf (xg r) o)) =>
 
     to (IxComp x) = to x
 
+-- |Given a certain index and an indexed type, maps all indices to the type
+-- yielded by the original indexed type for that index.
 data IxProj :: inputIndex -> (inputIndex -> *) -> outputIndex -> * where
     IxProj :: r i -> IxProj i r o
 
@@ -121,17 +146,24 @@ instance Isomorphic a (r i) => Isomorphic a (IxProj i r o) where
 
     to (IxProj x) = to x
 
+-- |Only constructible for output index passed as a parameter, barring `fix` `id` 
+-- and all that.
 data IxOut :: outputIndex -> (inputIndex -> *) -> outputIndex -> * where
     IxOut :: Equality o' o -> IxOut o' r o
 
 instance IxFunctor (IxOut o') where
     _ `ixmap` (IxOut x) = IxOut x
 
+-- |Unlike with `Functor`, `Bifunctor` etc., fixed point of an indexed functor
+-- is also an indexed functor. `IxFix` uses a specific convention to determine
+-- which variables should be treated as free (those tagged as left), and which
+-- should be plugged back into the base functor (those tagged as right).
 data IxFix ::
         ((Either inputIndex outputIndex -> *) -> outputIndex -> *) ->
         (inputIndex -> *) -> outputIndex -> * where
     IxFix :: IxFunctor xf => xf (r `IxTEither` IxFix xf r) o -> IxFix xf r o
 
+-- |Snips off the `IxFix` data constructor. (`project`, essentially.)
 ixunfix :: IxFix xf r o -> xf (r `IxTEither` IxFix xf r) o
 ixunfix (IxFix x) = x
 

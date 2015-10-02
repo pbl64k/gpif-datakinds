@@ -8,6 +8,18 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeOperators #-}
 
+{-|
+Module      : Control.IxFunctor.List
+Description : Cons-cell lists
+Copyright   : Pavel Lepin, 2015
+License     : BSD2
+Maintainer  : pbl64k@gmail.com
+Stability   : experimental
+Portability : GHC >= 7.8
+
+Cons-cell lists encoded through indexed functors.
+-}
+
 module Control.IxFunctor.List
         ( ListFunctor
         , List
@@ -27,8 +39,10 @@ import Control.IxFunctor.IxType
 import Control.IxFunctor.IxFunctor
 import Control.IxFunctor.RecScheme
 
+-- |Base functor for lists, X. 1 + A x X
 type ListFunctor = ((IxUnit :+: (IxProj (Left '()) :*: IxProj (Right '()))) :: (Either () () -> *) -> () -> *)
 
+-- |Fix X. 1 + A x X
 type List = IxFix ListFunctor
 
 fromList :: forall a b ix. Isomorphic a (b '()) => [a] -> List b ix
@@ -53,15 +67,18 @@ instance Isomorphic a (b '()) => Isomorphic [a] (List b ix) where
 
     to = toList
 
+-- |`fmap` for lists falls out of it almost for free.
 mapList :: (a -> b) -> [a] -> [b]
 mapList f = to . (liftIxTConst f `ixmap`) . fromList
 
+-- |The well-known `foldr` in a slightly unusual (but aesthetically pleasing) form.
 cataList :: forall a b. (Maybe (b, a) -> a) -> [b] -> a
 cataList algebra = isoToLeft (alg `ixcata`)
     where
         alg :: ListFunctor (IxTConst b `IxTEither` IxTConst a) :-> IxTConst a
         alg = isoToRight algebra
 
+-- |List unfold.
 anaList :: forall a b. (a -> Maybe (b, a)) -> a -> [b]
 anaList coalgebra = isoToLeft (coalg `ixana`)
     where

@@ -6,6 +6,17 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 
+{-|
+Module      : Control.IxFunctor.ShowInstances
+Description : For debugging purposes
+Copyright   : Pavel Lepin, 2015
+License     : BSD2
+Maintainer  : pbl64k@gmail.com
+Stability   : experimental
+Portability : GHC >= 7.8
+
+-}
+
 module Control.IxFunctor.ShowInstances where
 
 import Control.IxFunctor.Equality
