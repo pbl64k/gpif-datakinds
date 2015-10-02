@@ -25,3 +25,51 @@ Note that `haddock` seems to get a little confused by all of the extensions
 this library is using, so some signatures look quite nonsensical. When in
 doubt, look in the sources.
 
+# What is this all about?
+
+It's the same thing as Edward A. Kmett's [`recursion-schemes`](https://github.com/ekmett/recursion-schemes),
+only more general and less practical. The problem is that `Functor`s
+(`Bifunctor`s etc.) in Haskell sense of the word are not closed under `fix`.
+Not to mention the fact that it's not clear how to generalize to arbitrary
+arities, apart from going the "no one's going to need a 15-tuple" route.
+Mutual recursion also represent some problems.
+
+I mused about this idly [on reddit](https://www.reddit.com/r/haskell/comments/3dcidp/the_evolution_of_a_haskell_programmer/ct3yvr9?context=3),
+when SUDDENLY, [Conor McBride](https://github.com/pigworker) showed up and
+pointed me towards his slides. I also found the unfinished
+[Slicing It!](https://personal.cis.strath.ac.uk/conor.mcbride/pub/SlicingIt/SlicingIt.pdf)
+of his. All of that was more than a little mind-boggling and seemed to require
+non-standard extensions I've never even heard of before.
+
+Further research led me to [Generic Programming with Indexed Functors](http://dreixel.net/research/pdf/gpif.pdf)
+by [Andres Löh](https://github.com/kosmikus) and [José Pedro Magalhães](https://github.com/dreixel)
+(see [also](https://github.com/kosmikus/indexed)). That was in Agda, though,
+which has a strictly more powerful type system than Haskell, and which I'm
+not particularly familiar with.
+
+So I tinker with *GPIF* and Idris a bit, time passed, and meanwhile,
+[nponeccop](https://github.com/nponeccop) that `DataKinds` do the same
+thing as the relevant SHE features. Unsurprisingly, I later found out
+that McBride earlier suggested using those for these purposes somewhere on
+SO.
+
+But no even remotely complete implementations appeared to be available in
+Haskell. So I decided to suck it up and follow the combination of *Slicing
+It!* and *GPIF* program spiced up by `DataKinds`. This is the end result.
+
+The generality of this fascinates me. It also works quite well in simple
+cases. Conversions between host types and indexed functors can be encoded
+very neatly using the generic cata- and anamorphisms. Concrete maps and
+recursion schemes fall out of it simply by specifying the right types and
+letting the isomorphisms do the work.
+
+Nevertheless, it's not very practical even in those simple cases. It's
+just less work to write the recursion schemes needed from scratch. And the
+going gets much, *much* tougher when we get to mutually recursive types,
+as `EvenOdd` here illustrates...
+
+So, this isn't intended for any kind (pardon the pun) of practical use,
+but I think that the insight into the nature of (mind fail -- algebraic
+data types? indexed functors? recursion schemes? I don't really know how
+to put this best) was entirely worth the trouble.
+
