@@ -15,6 +15,10 @@ module Control.IxFunctor.EvenOdd
         , EvenOdd
         , fromEven
         , fromOdd
+        , toEven
+        , toOdd
+        , mapEven
+        , mapOdd
         ) where
 
 import Control.IxFunctor.Equality
@@ -45,4 +49,31 @@ fromEven (ECons x xs) = IxFix $ IxLeft $ IxOut Reflexivity `IxProd` IxRight (fro
 fromOdd :: forall a b c d. (Isomorphic a (c '()), Isomorphic b (d '())) =>
         Odd a b -> EvenOdd (c `IxTEither` d) (Right '())
 fromOdd (OCons x xs) = IxFix $ IxRight $ IxOut Reflexivity `IxProd` (from x `IxProd` IxProj (IxTEitherRight (fromEven xs)))
+
+toEven :: forall a b c d. (Isomorphic a (c '()), Isomorphic b (d '())) =>
+        EvenOdd (c `IxTEither` d) (Left '()) -> Even a b
+toEven (IxFix (IxLeft (IxOut Reflexivity `IxProd` IxLeft _))) = ENil
+toEven (IxFix (IxLeft (IxOut Reflexivity `IxProd` IxRight (x `IxProd` IxProj (IxTEitherRight xs))))) = ECons (to x) (toOdd xs)
+
+toOdd :: forall a b c d. (Isomorphic a (c '()), Isomorphic b (d '())) =>
+        EvenOdd (c `IxTEither` d) (Right '()) -> Odd a b
+toOdd (IxFix (IxRight (IxOut Reflexivity `IxProd` (x `IxProd` IxProj (IxTEitherRight xs))))) = OCons (to x) (toEven xs)
+
+instance (Isomorphic a (c '()), Isomorphic b (d '())) =>
+        Isomorphic (Even a b) (EvenOdd (c `IxTEither` d) (Left '())) where
+    from = fromEven
+
+    to = toEven
+
+instance (Isomorphic a (c '()), Isomorphic b (d '())) =>
+        Isomorphic (Odd a b) (EvenOdd (c `IxTEither` d) (Right '())) where
+    from = fromOdd
+
+    to = toOdd
+
+mapEven :: forall a b c d. (a -> c) -> (b -> d) -> Even a b -> Even c d
+mapEven f g = toEven . ((liftIxTConst f `split` liftIxTConst g) `ixmap`) . fromEven
+
+mapOdd :: forall a b c d. (a -> c) -> (b -> d) -> Odd a b -> Odd c d
+mapOdd f g = toOdd . ((liftIxTConst f `split` liftIxTConst g) `ixmap`) . fromOdd
 
