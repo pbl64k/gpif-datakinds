@@ -32,7 +32,7 @@ only more general and less practical. The problem is that `Functor`s
 (`Bifunctor`s etc.) in Haskell sense of the word are not closed under `fix`.
 Not to mention the fact that it's not clear how to generalize to arbitrary
 arities, apart from going the "no one's going to need a 15-tuple" route.
-Mutual recursion also represent some problems.
+Mutual recursion also presents some problems.
 
 I mused about this idly [on reddit](https://www.reddit.com/r/haskell/comments/3dcidp/the_evolution_of_a_haskell_programmer/ct3yvr9?context=3),
 when SUDDENLY, [Conor McBride](https://github.com/pigworker) showed up and
@@ -47,15 +47,16 @@ by [Andres Löh](https://github.com/kosmikus) and [José Pedro Magalhães](https
 which has a strictly more powerful type system than Haskell, and which I'm
 not particularly familiar with.
 
-So I tinker with *GPIF* and Idris a bit, time passed, and meanwhile,
-[nponeccop](https://github.com/nponeccop) that `DataKinds` do the same
-thing as the relevant SHE features. Unsurprisingly, I later found out
-that McBride earlier suggested using those for these purposes somewhere on
-SO.
+Anyway, I tinkered with *GPIF* and Idris a bit, time passed, and meanwhile,
+[nponeccop](https://github.com/nponeccop) suggested to me that `DataKinds` do
+the same thing as the relevant SHE features. Unsurprisingly, I later found
+out that McBride earlier suggested using `DataKinds` for these purposes
+somewhere on SO as well.
 
-But no even remotely complete implementations appeared to be available in
-Haskell. So I decided to suck it up and follow the combination of *Slicing
-It!* and *GPIF* program spiced up by `DataKinds`. This is the end result.
+But nothing that would qualify as even a remotely complete implementation
+appeared to be available in Haskell. So I decided to suck it up and follow
+the combination of *Slicing It!* and *GPIF* program spiced up by `DataKinds`
+myself. This is the end result.
 
 The generality of this fascinates me. It also works quite well in simple
 cases. Conversions between host types and indexed functors can be encoded
@@ -70,6 +71,6 @@ as `EvenOdd` here illustrates...
 
 So, this isn't intended for any kind (pardon the pun) of practical use,
 but I think that the insight into the nature of (mind fail -- algebraic
-data types? indexed functors? recursion schemes? I don't really know how
-to put this best) was entirely worth the trouble.
+data types? indexed functors? recursion schemes? all of the above? I don't
+really know how to put this down concisely) was entirely worth the trouble.
 
