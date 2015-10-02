@@ -19,6 +19,8 @@ module Control.IxFunctor.EvenOdd
         , toOdd
         , mapEven
         , mapOdd
+        , cataEven
+        , cataOdd
         ) where
 
 import Control.IxFunctor.Equality
@@ -76,4 +78,26 @@ mapEven f g = toEven . ((liftIxTConst f `split` liftIxTConst g) `ixmap`) . fromE
 
 mapOdd :: forall a b c d. (a -> c) -> (b -> d) -> Odd a b -> Odd c d
 mapOdd f g = toOdd . ((liftIxTConst f `split` liftIxTConst g) `ixmap`) . fromOdd
+
+cataEven :: forall a b c d. (Maybe (a, d) -> c) -> ((b, c) -> d) -> Even a b -> c
+cataEven algEven algOdd xs = res'
+    where
+        alg :: EvenOddFunctor ((IxTConst a `IxTEither` IxTConst b) `IxTEither` (IxTConst c `IxTEither` IxTConst d)) :->
+                (IxTConst c `IxTEither` IxTConst d)
+        alg (IxLeft (IxOut Reflexivity `IxProd` xs)) = IxTEitherLeft $ isoToRight algEven xs
+        alg (IxRight (IxOut Reflexivity `IxProd` xs)) = IxTEitherRight $ isoToRight algOdd xs
+        res = alg `ixcata` fromEven xs
+        res' :: c
+        res' = case res of (IxTEitherLeft (IxTConst res)) -> res
+
+cataOdd :: forall a b c d. (Maybe (a, d) -> c) -> ((b, c) -> d) -> Odd a b -> d
+cataOdd algEven algOdd xs = res'
+    where
+        alg :: EvenOddFunctor ((IxTConst a `IxTEither` IxTConst b) `IxTEither` (IxTConst c `IxTEither` IxTConst d)) :->
+                (IxTConst c `IxTEither` IxTConst d)
+        alg (IxLeft (IxOut Reflexivity `IxProd` xs)) = IxTEitherLeft $ isoToRight algEven xs
+        alg (IxRight (IxOut Reflexivity `IxProd` xs)) = IxTEitherRight $ isoToRight algOdd xs
+        res = alg `ixcata` fromOdd xs
+        res' :: d
+        res' = case res of (IxTEitherRight (IxTConst res)) -> res
 
