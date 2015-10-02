@@ -123,3 +123,25 @@ anaEven coalgEven coalgOdd x = toEven res
         res :: EvenOdd (IxTConst a `IxTEither` IxTConst b) (Left '())
         res = coalg `ixana` x'
 
+anaOdd :: forall a b c d. (c -> Maybe (a, d)) -> (d -> (b, c)) -> d -> Odd a b
+anaOdd coalgEven coalgOdd x = toOdd res
+    where
+        coalg :: forall (ix :: Either () ()).
+                ((IxOut (Left '()) :*: IxProj (Left '())) :+: (IxOut (Right '()) :*: IxProj (Right '()))) (IxTConst c `IxTEither` IxTConst d) ix ->
+                EvenOddFunctor ((IxTConst a `IxTEither` IxTConst b) `IxTEither` (((IxOut (Left '()) :*: IxProj (Left '())) :+: (IxOut (Right '()) :*: IxProj (Right '()))) (IxTConst c `IxTEither` IxTConst d))) ix
+        coalg (IxLeft (IxOut refl `IxProd` x)) = IxLeft $ IxOut refl `IxProd` seed'
+            where
+                x' = coalgEven $ to x
+                seed' = case x' of
+                    Nothing -> IxLeft IxUnit
+                    Just (a, b) -> IxRight $ IxProj (from a) `IxProd` IxProj (IxTEitherRight (IxRight (IxOut Reflexivity `IxProd` IxProj (from b))))
+        coalg (IxRight (IxOut refl `IxProd` x)) = IxRight $ IxOut refl `IxProd` seed'
+            where
+                (a, b) = coalgOdd $ to x
+                seed' = IxProj (from a) `IxProd` IxProj (IxTEitherRight (IxLeft (IxOut Reflexivity `IxProd` IxProj (from b))))
+        x' :: ((IxOut (Left '()) :*: IxProj (Left '())) :+: (IxOut (Right '()) :*: IxProj (Right '())))
+                (IxTConst c `IxTEither` IxTConst d) (Right '())
+        x' = IxRight $ IxOut Reflexivity `IxProd` IxProj (IxTEitherRight (IxTConst x))
+        res :: EvenOdd (IxTConst a `IxTEither` IxTConst b) (Right '())
+        res = coalg `ixana` x'
+
