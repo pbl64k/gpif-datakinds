@@ -99,6 +99,3 @@ apoInteger coalgebra = isoToLeft (coalg `ixapo`)
         coalg :: IxTConst a :-> NatFunctor (IxTVoid `IxTEither` (IxTConst a `IxTChoice` Nat IxTVoid))
         coalg = isoToRight coalgebra
 
-paraFactorial :: Integer -> Integer
-paraFactorial = paraInteger $ 1 `maybe` \(n, x) -> n * succ x
-

@@ -36,6 +36,8 @@ module Control.IxFunctor.EvenOdd
         , mapOdd
         , cataEven
         , cataOdd
+        , anaEven
+        , anaOdd
         ) where
 
 import Control.IxFunctor.Equality
