@@ -1,0 +1,27 @@
+name:                gpif-datakinds
+version:             0.0.1.0
+synopsis:            "Free" (co)recursion schemes using indexed functors and DataKinds.
+homepage:            https://github.com/pbl64k/gpif-datakinds
+license:             BSD2
+license-file:        LICENSE
+author:              Pavel Lepin
+maintainer:          pbl64k@gmail.com
+copyright:           Copyright (c) 2015, Pavel Lepin
+category:            Control
+build-type:          Simple
+extra-source-files:  README.md
+cabal-version:       >=1.10
+
+extra-source-files:
+  README.md
+
+source-repository head
+  type:     git
+  location: git://github.com/pbl64k/gpif-datakinds.git
+
+library
+  exposed-modules:     Control.IxFunctor, Control.IxFunctor.Nat, Control.IxFunctor.Iso, Control.IxFunctor.EvenOdd, Control.IxFunctor.RecScheme, Control.IxFunctor.ShowInstances, Control.IxFunctor.Equality, Control.IxFunctor.List, Control.IxFunctor.Rose, Control.IxFunctor.IxType, Control.IxFunctor.IxFunctor, Control.IxFunctor.Examples.Examples
+  other-extensions:    GADTs, DataKinds, PolyKinds, KindSignatures, RankNTypes, ScopedTypeVariables, MultiParamTypeClasses, FlexibleInstances, FlexibleContexts, TypeOperators, InstanceSigs, IncoherentInstances, StandaloneDeriving, UndecidableInstances
+  build-depends:       base >=4.7 && <4.8
+  hs-source-dirs:      src
+  default-language:    Haskell2010

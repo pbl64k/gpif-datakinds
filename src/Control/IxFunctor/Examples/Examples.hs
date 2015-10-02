@@ -14,6 +14,10 @@ module Control.IxFunctor.Examples.Examples
         ( paraFactorial
         , anacataFactorial
         , hyloFactorial
+        , sumList
+        , sumTree
+        , sumEven
+        , genEven
         , RoseTree(RoseTree)
         , Even(ENil, ECons)
         , Odd(OCons)
