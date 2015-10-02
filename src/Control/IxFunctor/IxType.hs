@@ -23,7 +23,7 @@ Basic indexed types and combinators used as building blocks.
 module Control.IxFunctor.IxType
         ( Void
         , (:->)
-        , IxTVoid(IxTVoid)
+        , IxTVoid
         , IxTConst(IxTConst)
         , liftIxTConst
         , IxTEither(IxTEitherLeft, IxTEitherRight)
@@ -35,16 +35,14 @@ module Control.IxFunctor.IxType
 
 import Control.IxFunctor.Iso
 
--- |Uninhabited type that is secretly inhabited (and not just by `undefined`)
--- to allow construction of the indexed void type below.
-data Void = Void
+-- |Uninhabited type (except for `undefined`).
+data Void
 
 -- |An arrow type between indexed types with the same index domain.
 type t :-> v = forall ix. t ix -> v ix
 
 -- |Void indexed type.
 data IxTVoid :: Void -> * where
-    IxTVoid :: IxTVoid 'Void
 
 -- |Constant indexed type that maps to the same type for all indices in the
 -- domain.
