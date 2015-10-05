@@ -19,7 +19,7 @@ module Control.IxFunctor.Equality
 
 -- |Witnesses equality between types `a` and `b`.
 -- Should only be constructible by invoking reflexivity of the equality relation.
--- (And never mind the hulking `undefined` in the corner)
+-- (And never mind the hulking `undefined` in the corner.)
 data Equality a b where
     Reflexivity :: Equality a a
 

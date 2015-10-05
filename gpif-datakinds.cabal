@@ -1,5 +1,5 @@
 name:                gpif-datakinds
-version:             0.0.1.0
+version:             0.0.1.1
 synopsis:            "Free" (co)recursion schemes using indexed functors and DataKinds.
 homepage:            https://github.com/pbl64k/gpif-datakinds
 license:             BSD2

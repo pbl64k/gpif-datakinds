@@ -13,7 +13,7 @@
 
 {-|
 Module      : Control.IxFunctor
-Description : "Free" (co)recursion schemes for a broad range of algebraic data types
+Description : Free (co)recursion schemes for a broad range of algebraic data types
 Copyright   : Pavel Lepin, 2015
 License     : BSD2
 Maintainer  : pbl64k@gmail.com
