@@ -91,7 +91,7 @@ instance (Isomorphic a (c ix), Isomorphic b (d jx)) => Isomorphic (a, b) (IxTTup
     to (x `IxTTuple` y) = (to x, to y)
 
 -- |Given two types with the same index domain, produces a type with the same
--- domain with values being sums of all mapped types.
+-- domain with values being sums of each pair of mapped types.
 data IxTChoice :: (t -> *) -> (t -> *) -> t -> * where
     IxTChoiceLeft :: tf t -> IxTChoice tf tg t
     IxTChoiceRight :: tg t -> IxTChoice tf tg t
@@ -103,7 +103,7 @@ instance (Isomorphic a (c ix), Isomorphic b (d ix)) => Isomorphic (Either a b) (
     to (IxTChoiceLeft x) = Left $ to x
     to (IxTChoiceRight x) = Right $ to x
 
--- |Similar to `IxTChoice`, but yields product of all mapped types.
+-- |Similar to `IxTChoice`, but yields products of corresponding mapped types.
 data IxTPair :: (t -> *) -> (t -> *) -> t -> * where
     IxTPair :: xf t -> xg t -> IxTPair xf xg t
 

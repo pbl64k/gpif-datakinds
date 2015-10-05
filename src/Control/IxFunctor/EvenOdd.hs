@@ -57,7 +57,7 @@ type EvenOddFunctor =
         (IxOut (Right '()) :*: (IxProj (Left (Right '())) :*: IxProj (Right (Left '())))))
         :: (Either (Either () ()) (Either () ()) -> *) -> Either () () -> *)
 
--- |Indexed functor accepting two type parameters (in form of an indexed types)
+-- |Indexed functor accepting two type parameters (in form of an indexed type)
 -- and producing a family of two mutually recursive types isomorphic to `Even`
 -- and `Odd` above.
 type EvenOdd = IxFix EvenOddFunctor

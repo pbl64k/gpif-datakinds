@@ -11,6 +11,20 @@
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE IncoherentInstances #-}
 
+{-|
+Module      : Control.IxFunctor
+Description : "Free" (co)recursion schemes for a broad range of algebraic data types
+Copyright   : Pavel Lepin, 2015
+License     : BSD2
+Maintainer  : pbl64k@gmail.com
+Stability   : experimental
+Portability : GHC >= 7.8
+
+This module re-exports a bunch of stuff from other modules that should be
+completely sufficient to define your own data types and get the recursion
+schemes for them from the generic implementations.
+-}
+
 module Control.IxFunctor
         ( Void
         , Equality(Reflexivity)

@@ -60,7 +60,7 @@ instance Isomorphic Void (IxVoid r o) where
 
     to = undefined
 
--- |Unit functor maps everything to unit type.
+-- |Unit functor maps everything to lifted unit type.
 data IxUnit :: (inputIndex -> *) -> outputIndex -> * where
     IxUnit :: IxUnit r o
 
@@ -134,7 +134,9 @@ instance (IxFunctor xf, IxFunctor xg, Isomorphic a (xf (xg r) o)) =>
     to (IxComp x) = to x
 
 -- |Given a certain index and an indexed type, maps all indices to the type
--- yielded by the original indexed type for that index.
+-- yielded by the original indexed type for that index. This is necessary
+-- to access parameters of our data types, as we have to write everything
+-- point-free.
 data IxProj :: inputIndex -> (inputIndex -> *) -> outputIndex -> * where
     IxProj :: r i -> IxProj i r o
 
@@ -147,7 +149,10 @@ instance Isomorphic a (r i) => Isomorphic a (IxProj i r o) where
     to (IxProj x) = to x
 
 -- |Only constructible for output index passed as a parameter, barring `fix` `id` 
--- and all that.
+-- and all that. Useful for mutually recursive data types in particular. The base
+-- functor can be represented by a sum where each summand is marked with `IxOut`
+-- for the corresponding output index, ensuring that such value can only be
+-- constructed for that same output index.
 data IxOut :: outputIndex -> (inputIndex -> *) -> outputIndex -> * where
     IxOut :: Equality o' o -> IxOut o' r o
 

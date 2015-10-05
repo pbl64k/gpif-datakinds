@@ -48,7 +48,7 @@ which has a strictly more powerful type system than Haskell, and which I'm
 not particularly familiar with.
 
 Anyway, I [tinkered with *GPIF* and Idris a bit](https://github.com/pbl64k/gpif-idris)
-(that implementation is extensively commented, and could probable serve as introductory
+(that implementation is extensively commented, and could probably serve as introductory
 reading on this topic), time passed, and meanwhile, [nponeccop](https://github.com/nponeccop)
 suggested to me that `DataKinds` do the same thing as the relevant SHE features.
 Unsurprisingly, I later found out that McBride has earlier suggested using `DataKinds`
