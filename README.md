@@ -29,34 +29,35 @@ doubt, look in the sources.
 
 It's the same thing as Edward A. Kmett's [`recursion-schemes`](https://github.com/ekmett/recursion-schemes),
 only more general and less practical. The problem is that `Functor`s
-(`Bifunctor`s etc.) in Haskell sense of the word are not closed under `fix`.
+(`Bifunctor`s etc.) in Haskell sense of the word are not closed under `Fix`.
 Not to mention the fact that it's not clear how to generalize to arbitrary
 arities, apart from going the "no one's going to need a 15-tuple" route.
 Mutual recursion also presents some problems.
 
 I mused about this idly [on reddit](https://www.reddit.com/r/haskell/comments/3dcidp/the_evolution_of_a_haskell_programmer/ct3yvr9?context=3),
 when SUDDENLY, [Conor McBride](https://github.com/pigworker) showed up and
-pointed me towards his slides. I also found the unfinished
-[Slicing It!](https://personal.cis.strath.ac.uk/conor.mcbride/pub/SlicingIt/SlicingIt.pdf)
+pointed me towards his slides on precisely this issue. I also found the unfinished
+[*Slicing It!*](https://personal.cis.strath.ac.uk/conor.mcbride/pub/SlicingIt/SlicingIt.pdf)
 of his. All of that was more than a little mind-boggling and seemed to require
 non-standard extensions I've never even heard of before.
 
-Further research led me to [Generic Programming with Indexed Functors](http://dreixel.net/research/pdf/gpif.pdf)
+Further research led me to [*Generic Programming with Indexed Functors*](http://dreixel.net/research/pdf/gpif.pdf)
 by [Andres Löh](https://github.com/kosmikus) and [José Pedro Magalhães](https://github.com/dreixel)
 (see [also](https://github.com/kosmikus/indexed)). That was in Agda, though,
 which has a strictly more powerful type system than Haskell, and which I'm
 not particularly familiar with.
 
-Anyway, I tinkered with *GPIF* and Idris a bit, time passed, and meanwhile,
-[nponeccop](https://github.com/nponeccop) suggested to me that `DataKinds` do
-the same thing as the relevant SHE features. Unsurprisingly, I later found
-out that McBride earlier suggested using `DataKinds` for these purposes
-somewhere on SO as well.
+Anyway, I [tinkered with *GPIF* and Idris a bit](https://github.com/pbl64k/gpif-idris)
+(that implementation is extensively commented, and could probable serve as introductory
+reading on this topic), time passed, and meanwhile, [nponeccop](https://github.com/nponeccop)
+suggested to me that `DataKinds` do the same thing as the relevant SHE features.
+Unsurprisingly, I later found out that McBride has earlier suggested using `DataKinds`
+for these purposes somewhere on SO as well.
 
 But nothing that would qualify as even a remotely complete implementation
 appeared to be available in Haskell. So I decided to suck it up and follow
-the combination of *Slicing It!* and *GPIF* program spiced up by `DataKinds`
-myself. This is the end result.
+the combination of *Slicing It!* and *GPIF* programs spiced up by `DataKinds`
+myself. This is the end result of that effort.
 
 The generality of this fascinates me. It also works quite well in simple
 cases. Conversions between host types and indexed functors can be encoded
@@ -70,7 +71,6 @@ going gets much, *much* tougher when we get to mutually recursive types,
 as `EvenOdd` here illustrates...
 
 So, this isn't intended for any kind (pardon the pun) of practical use,
-but I think that the insight into the nature of (mind fail -- algebraic
-data types? indexed functors? recursion schemes? all of the above? I don't
-really know how to put this down concisely) was entirely worth the trouble.
+but I think that the insight into the nature of certain sorts of algebraic data
+types and their associated recursion schemes was entirely worth the trouble.
 
