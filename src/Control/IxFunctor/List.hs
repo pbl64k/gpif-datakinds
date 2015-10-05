@@ -105,15 +105,3 @@ apoList coalgebra = isoToLeft (coalg `ixapo`)
         coalg :: IxTConst a :-> ListFunctor (IxTConst b `IxTEither` (IxTConst a `IxTChoice` List (IxTConst b)))
         coalg = isoToRight coalgebra
 
-factorial :: Integer -> Integer
-factorial = cataList (1 `maybe` uncurry (*)) . anaList coalg
-    where
-        coalg 0 = Nothing
-        coalg n = Just (n, pred n)
-
-hyloFactorial :: Integer -> Integer
-hyloFactorial = hyloList (1 `maybe` uncurry (*)) coalg
-    where
-        coalg 0 = Nothing
-        coalg n = Just (n, pred n)
-
